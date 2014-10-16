@@ -1,0 +1,1 @@
+Modified version of Clathrin Mediated Endocytosis analysis code, originally published in Aguet 2013 and available from the Danuser lab at Harvard (http://lccb.hms.harvard.edu/software.html)
