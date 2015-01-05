@@ -54,7 +54,7 @@ if isempty(cv)
 end
 
 % 1) Plot CCP distributions
-if ~all(cellfun(@(i) isfield(i, 'lftHistSlaveCCP'), lftRes))
+if all(cellfun(@(i) isfield(i, 'lftHistSlaveCCP'), lftRes))
     ha = setupFigure();
     for i = ip.Results.PlotOrder
         hp(i) = plot(lftRes{i}.t, w(i)*lftRes{i}.meanLftHistCCP, '-', 'LineWidth', 1, 'Color', cv(i,:));

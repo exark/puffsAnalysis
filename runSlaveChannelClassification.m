@@ -17,12 +17,13 @@ function runSlaveChannelClassification(data, varargin)
 ip = inputParser;
 ip.CaseSensitive = false;
 ip.addRequired('data', @isstruct);
-ip.addParamValue('Alpha', 0.05, @isscalar);
+ip.addParamValue('Alpha', 0.001, @isscalar);
 ip.addParamValue('Overwrite', false, @islogical);
 ip.addParamValue('FileName', 'ProcessedTracks.mat', @ischar);
 ip.addParamValue('Cutoff_f', 5, @isscalar);
 ip.addParamValue('np', 10000);
 ip.addParamValue('Mode', 'random', @(x) any(strcmpi(x, {'random', 'maskRatio'})));
+ip.addParamValue('MasterCh', 1, @(x) numel(x)==1); 
 ip.parse(data, varargin{:});
 
 % reset random number generator to ensure reproducibility
@@ -56,7 +57,7 @@ cellmask = logical(getCellMask(data));
 
 % Determine master/slave channels
 nc = length(data.channels); % number of channels
-mCh = strcmp(data.source, data.channels);
+mCh = opts.MasterCh;
 sCh = setdiff(1:nc, mCh);
 
 load([data.source 'Detection' filesep 'detection_v2.mat']);

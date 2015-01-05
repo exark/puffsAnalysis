@@ -12,6 +12,7 @@
 %     'TrackingRadius' : [minRadius maxRadius] search radii for frame-to-frame linking and gap closing. Default: [3 6]
 %       'ChannelNames' : cell array of channel names (e.g., {'EGFP-CLCa'}). Default: fluorophore names
 %          'Overwrite' : true|[false] overwrites results of previous analyses. 
+%           'MasterCh' : which channel from 'data' should be used as the master in runDetection. Default: 1
 %
 % Outputs:
 %            res : analysis results. Lifetime analysis in 'lftRes' field; intensity cohorts in 'cohorts' field
@@ -72,6 +73,7 @@ ip.addParamValue('PlotAll', false, @islogical);
 ip.addParamValue('ChannelNames', []);
 ip.addParamValue('FirstNFrames', [], @isposint);
 ip.addParamValue('DisplayMode', 'screen', @(x) any(strcmpi(x, {'print', 'screen'})));
+ip.addParamValue('MasterCh', 1, @(x) numel(x)==1);
 ip.parse(varargin{:});
 data = ip.Results.data;
 
@@ -91,8 +93,8 @@ opts = {'Overwrite', ip.Results.Overwrite};
 %-------------------------------------------------------------------------------
 % 1) Detection
 %-------------------------------------------------------------------------------
-runDetection(data, 'SigmaSource', ip.Results.GaussianPSF, opts{:});
-cmap = plotPSNRDistribution(data, 'Pool', false);
+runDetection(data, 'SigmaSource', ip.Results.GaussianPSF, 'Master', ip.Results.MasterCh, opts{:});
+cmap = plotPSNRDistribution(data, 'Pool', false, 'Channel', ip.Results.MasterCh);
 
 %-------------------------------------------------------------------------------
 % 2) Tracking
@@ -105,7 +107,7 @@ runTracking(data, settings, opts{:});
 %-------------------------------------------------------------------------------
 runTrackProcessing(data, opts{:});
 if numel(data(1).channels)>1
-    runSlaveChannelClassification(data, opts{:}, 'np', 5000);
+    runSlaveChannelClassification(data, opts{:}, 'np', 5000, 'MasterCh', ip.Results.MasterCh);
 end
 
 %-------------------------------------------------------------------------------
