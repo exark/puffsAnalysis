@@ -123,7 +123,7 @@ if ip.Results.PlotAll
 else
     display = 'off';
 end
-lopts = {'Display', display, 'RemoveOutliers', true, 'Colormap', cmap, 'DisplayMode', ip.Results.DisplayMode,...
+lopts = {'Display', display, 'RemoveOutliers', false, 'Colormap', cmap, 'DisplayMode', ip.Results.DisplayMode,...
     'SlaveNames', chNames(2:end), 'FirstNFrames', ip.Results.FirstNFrames, 'Overwrite', ip.Results.Overwrite};
 if isempty(ip.Results.ControlData)
     res.lftRes = runLifetimeAnalysis(data, lopts{:});
