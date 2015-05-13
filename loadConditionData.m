@@ -36,7 +36,7 @@ ip.addOptional('condDir', [], @(x) ischar(x) && ~any(strcmpi(x,...
     {'Parameters', 'MovieSelector', 'IgnoreEmptyFolders', 'FrameRate'})));
 ip.addOptional('chNames', [], @iscell);
 ip.addOptional('markers', [], @iscell);
-ip.addParamValue('Parameters', [1.49 100 6.45e-6], @(x) numel(x)==3);
+ip.addParamValue('Parameters', [1.49 120 16e-6], @(x) numel(x)==3);
 ip.addParamValue('MovieSelector', 'cell', @ischar);
 ip.addParamValue('StrictSelector', false, @islogical);
 ip.addParamValue('IgnoreEmptyFolders', false, @islogical);
@@ -141,13 +141,13 @@ end
 
 channels = cell(1,nCh);
 for k = 1:nCells
-    
+
     % detect date
     data(k).date = cell2mat(regexp(cellPath{k}, '\d{6}+', 'match'));
     if isempty(date)
         data(k).date = '000000';
     end
-    
+
     % detect frame
     fr = regexp(cellPath{k}, '_(\d+)?(\.)?\d+s', 'match');
     if ~isempty(ip.Results.FrameRate)
@@ -162,7 +162,7 @@ for k = 1:nCells
             data(k).framerate = 2; % default: 2s
         end
     end
-    
+
     % assign full channel paths
     framePaths = cell(1,nCh);
     for c = 1:nCh
@@ -180,7 +180,7 @@ for k = 1:nCells
                 channels{c} = [channels{c} filesep];
             end
         end
- 
+
         % list directory contents and select TIFFs
         tmp = dir(channels{c});
         tmp = tmp(cellfun(@(i) ~strcmpi(i(1), '.'), {tmp.name}));
@@ -197,7 +197,7 @@ for k = 1:nCells
     end
     data(k).channels = channels;
     data(k).source = channels{1}; % master channel default
-    
+
     % only store frame paths if frames for all channels are found
     if all(~cellfun(@isempty, framePaths))
         if numel(framePaths{1})==1
@@ -222,7 +222,7 @@ for k = 1:nCells
             data(k).movieLength = d.data.movieLength;
         end
     end
-    
+
     % generate mask paths
     if iscell(data(k).framePaths{1})
         maskPath = [data(k).source 'Detection' filesep 'Masks' filesep];
@@ -234,13 +234,13 @@ for k = 1:nCells
     else
         % save masks as stack
         data(k).maskPaths = [data(k).source 'Detection' filesep 'dmasks.tif'];
-    end    
-    
+    end
+
     data(k).markers = markers;
     data(k).NA = parameters(1);
     data(k).M = parameters(2);
     data(k).pixelSize = parameters(3);
-    
+
     fprintf('Loaded: %s\n', cellPath{k});
 end
 
