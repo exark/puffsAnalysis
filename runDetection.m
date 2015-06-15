@@ -114,12 +114,15 @@ parfor k = 1:data.movieLength
     else
         img = double(imread(data.framePaths{mCh}{k}));
     end
-    
+    % (TP): psd returns pstruct with Gaussian parameters, standard
+    % deviations, p-values and mask at column corresponding to frame k
+    % is filled with all the significant pixels (in amplitude)  
     [pstruct, mask(:,:,k)] = pointSourceDetection(img, sigma(mCh), 'Alpha', opts.Alpha,...
         'Mask', opts.CellMask, 'RemoveRedundant', opts.RemoveRedundant); %#ok<PFBNS>
     
     if ~isempty(pstruct)
         pstruct.s = sigma;
+        % (TP) removes 's_pstd' from pstruct 
         pstruct = rmfield(pstruct, 's_pstd');
         
         pstruct.dRange{mCh} = [min(img(:)) max(img(:))];
@@ -128,6 +131,7 @@ parfor k = 1:data.movieLength
         % expand structure for slave channels
         for f = 1:length(dfields)
             tmp = NaN(nCh, np);
+            % (TP) copies the values of each dfield in pstruct to temp
             tmp(mCh,:) = pstruct.(dfields{f});
             pstruct.(dfields{f}) = tmp;
         end
@@ -139,14 +143,20 @@ parfor k = 1:data.movieLength
         
         % get component size and intensity for each detection
         CC = bwconncomp(mask(:,:,k));
+        % (TP) matrix of connected components, values >= 0, 0 = bg, 1 = 1 obj, 2 = 2 obj
         labels = labelmatrix(CC);
         % mask label for each detection
         loclabels = labels(sub2ind(size(img), pstruct.y_init, pstruct.x_init));
+        %(TP) pixelidxlist: 1-by-NumObjects cell array where the 
+        %kth element in the cell array is a vector containing the linear indices of the pixels in the kth object.
         compSize = cellfun(@(i) numel(i), CC.PixelIdxList);
+        % (TP) gets the indices of all the pixels in this frame by object 
         pstruct.maskN = compSize(loclabels);
         compInt = cellfun(@(i) sum(img(i))/numel(i), CC.PixelIdxList);
+        % (TP) average amplitude of all pixels
         pstruct.maskA = compInt(loclabels);
-               
+        
+        % (TP) % ci = values in A that are not in B
         for ci = setdiff(1:nCh, mCh)
             if ~iscell(data.framePaths{ci})
                 img = double(readtiff(data.framePaths{ci}, k));
