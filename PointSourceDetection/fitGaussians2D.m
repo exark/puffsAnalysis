@@ -57,14 +57,16 @@ ip.addParamValue('ConfRadius', []);
 ip.addParamValue('WindowSize', []);
 ip.parse(img, x, y, A, sigma, c, varargin{:});
 
-np = length(x);
+np = length(x);    
 sigma = ip.Results.sigma;
+% (TP) uses same sigma for all pixels 
 if numel(sigma)==1
-    sigma = sigma*ones(1,np);
+    sigma = sigma*ones(1,np);  
 end
 mode = ip.Results.mode;
+% (TP) label maxtrix for 8 connected objects in mask
 if ~isempty(ip.Results.Mask)
-    labels = bwlabel(ip.Results.Mask);
+    labels = bwlabel(ip.Results.Mask);   
 else
     labels = zeros(size(img));
 end
@@ -83,7 +85,9 @@ kLevel = norminv(1-ip.Results.Alpha/2.0, 0, 1); % ~2 std above background
 iRange = [min(img(:)) max(img(:))];
 
 estIdx = regexpi('xyAsc', ['[' mode ']']);
-
+% startIndex = regexpi(str,expression) returns the starting index of each 
+%substring of str that matches the character patterns specified by the regular expression,
+%without regard to letter case. If there are no matches, startIndex is an empty array
 
 % initialize pStruct arrays
 pStruct.x = NaN(1,np);
@@ -98,18 +102,19 @@ pStruct.A_pstd = NaN(1,np);
 pStruct.s_pstd = NaN(1,np);
 pStruct.c_pstd = NaN(1,np);
 
-pStruct.x_init = reshape(xi, [1 np]);
+% (TP) these are rounded pixel values
+pStruct.x_init = reshape(xi, [1 np]);   
 pStruct.y_init = reshape(yi, [1 np]);
 
 pStruct.sigma_r = NaN(1,np);
 pStruct.SE_sigma_r = NaN(1,np);
-pStruct.RSS = NaN(1,np);
+pStruct.RSS = NaN(1,np);        % (TP) not sure what RSS is 
 
-pStruct.pval_Ar = NaN(1,np);
+pStruct.pval_Ar = NaN(1,np);    % (TP) p value of amplitude v bg noise 
 pStruct.mask_Ar = zeros(1,np);
 
-pStruct.hval_AD = false(1,np);
-pStruct.hval_Ar = false(1,np);
+pStruct.hval_AD = false(1,np);  % ???
+pStruct.hval_Ar = false(1,np);  % ???
 
 
 sigma_max = max(sigma);
@@ -140,44 +145,59 @@ df2 = zeros(1,np);
 for p = 1:np
     
     % ignore points in border
+    % why do we want to ignore the border? because we can't do a fit? 
     if (xi(p)>w4 && xi(p)<=nx-w4 && yi(p)>w4 && yi(p)<=ny-w4)
         
         % label mask
+        % (TP) mask window of zeros the size of the -w4:w4 meshgrid
         maskWindow = labels(yi(p)-w4:yi(p)+w4, xi(p)-w4:xi(p)+w4);
+        % (TP) defines the border of the mask?
         maskWindow(maskWindow==maskWindow(w4+1,w4+1)) = 0;
         
+        % (TP) displays the mask, each element is a color 
         window = img(yi(p)-w4:yi(p)+w4, xi(p)-w4:xi(p)+w4);
 
         % estimate background        
         if isempty(c)
-            cmask = annularMask;
+            cmask = annularMask; 
+            % (TP) cmask = 0 is where maskWindow is not background    
             cmask(maskWindow~=0) = 0;
+            % (TP) % cmask == 1 is background, c_init = sum of bg pixels / total num pixels
             c_init = mean(window(cmask==1));
         else
             c_init = c(p);
         end
         
         % set any other components to NaN
-        window(maskWindow~=0) = NaN;
+         (TP)window = Nan where maskWindow is not background
+        window(maskWindow~=0) = NaN
+        % (TP) npx = number of pixels that are bg
         npx = sum(isfinite(window(:)));
         
         if npx >= 10 % only perform fit if window contains sufficient data points
         
             % fit
             if isempty(A)
+                % (TP) adjusted amplitude after bg subtraction
                 A_init = max(window(:))-c_init;
             else
                 A_init = A(p);
             end
             
             [prm, prmStd, ~, res] = fitGaussian2D(window, [x(p)-xi(p) y(p)-yi(p) A_init sigma(p) c_init], mode);
-            
+            % (TP)
+            % prm = ('x', [], 'y', [], 'A', [], 's', [], 'c', [],...
+            % prmStd = 'x_pstd', [], 'y_pstd', [], 'A_pstd', [], 's_pstd', [], 'c_pstd', [],...
+            % res = 'sigma_r', [], 'SE_sigma_r', [], 'pval_Ar', []);
+
             dx = prm(1);
             dy = prm(2);
             
             % exclude points where localization failed
+            % (TP) why do you want to do this with dx, dy?
             if (dx > -w2 && dx < w2 && dy > -w2 && dy < w2 && prm(3)<2*diff(iRange))
                 
+                % (TP) adds back dx and dy after being subtracted in parameters
                 pStruct.x(p) = xi(p) + dx;
                 pStruct.y(p) = yi(p) + dy;
                 pStruct.A(p) = prm(3);
@@ -185,6 +205,8 @@ for p = 1:np
                 pStruct.c(p) = prm(5);
                 
                 stdVect = zeros(1,5);
+                %(TP) %estIdx: start index of each 'xyAsc' we are using as mode. 
+                % (TP) If we're using xyAsc, stdVect = 1 2 3 4 5
                 stdVect(estIdx) = prmStd;
                 
                 pStruct.x_pstd(p) = stdVect(1);
