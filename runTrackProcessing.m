@@ -37,7 +37,7 @@ ip.addParamValue('DetectionFile', 'detection_v2.mat', @ischar);
 ip.addParamValue('Frames', arrayfun(@(x) 1:x.movieLength, data, 'UniformOutput', false), @(x) numel(unique(diff(x)))==1); %check that frame rate is constant
 ip.addParamValue('Preprocess', true, @islogical);
 ip.addParamValue('Postprocess', true, @islogical);
-ip.addParamValue('CohortBounds_s', [10 20 40 60 80 100 125 150]); % used in post-proc
+ip.addParamValue('CohortBounds_s', [10 20 40 60 80 100 125 150 200 250 300 350 400 450 500]); % used in post-proc
 ip.addParamValue('ForceDiffractionLimited', true, @islogical);
 ip.parse(data, varargin{:});
 overwrite = ip.Results.Overwrite;
@@ -73,6 +73,7 @@ else
     return;
 end
 frameInfo = detection.frameInfo;
+% Sets lowest number of detectable pixels a point source can take up
 sigmaV = frameInfo(1).s;
 
 
@@ -87,21 +88,28 @@ kLevel = norminv(1-alpha/2.0, 0, 1); % ~2 std above background
 % Identify master/slave channels
 %=================================
 nCh = length(data.channels);
+
+% This checks to see which of the channels is the 'primary' channel
+% Primary = the first channel passed to loadConditionData
 mCh = strcmp(data.source, data.channels);
 
 % for k = 1:nCh
 %     data.framePaths{k} = data.framePaths{k}(frameIdx);
 % end
-% 
+%
 % data.maskPaths = data.maskPaths(frameIdx);
 % data.framerate = data.framerate*(frameIdx(2)-frameIdx(1));
 % data.movieLength = length(data.framePaths{1});
 
+
+% Setup pit detection radius. Create windows around point source (w3, w4)
 sigma = sigmaV(mCh);
 % w2 = ceil(2*sigma);
 w3 = ceil(3*sigma);
 w4 = ceil(4*sigma);
 
+% Creates a circular mask within a grid designated by w4, which is going to be used for pit detection
+% Used for gap detection later (passed to interpTrack)
 [x,y] = meshgrid(-w4:w4);
 r = sqrt(x.^2+y.^2);
 annularMask = zeros(size(r));
@@ -130,7 +138,7 @@ if preprocess
     rmIdx = diff(horzcat(bounds{:}), [], 1)==0;
     trackinfo(rmIdx) = [];
     nTracks = size(trackinfo, 1);
-    
+
     %----------------------------------------------------------------------
     % Merge compound tracks with overlapping ends/starts
     %----------------------------------------------------------------------
@@ -140,33 +148,33 @@ if preprocess
             seqOfEvents = trackinfo(i).seqOfEvents;
             tracksCoordAmpCG = trackinfo(i).tracksCoordAmpCG;
             tracksFeatIndxCG = trackinfo(i).tracksFeatIndxCG;
-            
+
             rmIdx = [];
             for s = 1:nSeg
                 iEvent = seqOfEvents(seqOfEvents(:,3)==s,:);
                 parentSeg = iEvent(2,4);
                 parentStartIdx = seqOfEvents(seqOfEvents(:,2)==1 & seqOfEvents(:,3)==parentSeg,1);
-                
+
                 % conditions for merging:
                 % -current segment merges at end
                 % -overlap between current segment and 'parent' it merges into: 1 frame
                 if ~isnan(iEvent(2,4)) &&...
                         iEvent(2,1)-1==parentStartIdx
-                    
-                    % replace start index of parent with start index of current segment
+
+                    % replace start index of parent with start index of current segment if current segment ends a frame after parent starts
                     seqOfEvents(seqOfEvents(:,3)==parentSeg & seqOfEvents(:,2)==1,1) = iEvent(1,1);
                     % remove current segment
                     seqOfEvents(seqOfEvents(:,3)==s,:) = [];
                     % assign segments that merge/split from current to parent
                     seqOfEvents(seqOfEvents(:,4)==s,4) = parentSeg;
-                    
+
                     % use distance of points at overlap to assign
                     xMat = tracksCoordAmpCG(:,1:8:end);
                     yMat = tracksCoordAmpCG(:,2:8:end);
-                    
+
                     % indexes in the 8-step matrices
                     iMat = repmat(1:size(xMat,2), [nSeg 1]).*~isnan(xMat);
-                    
+
                     overlapIdx = setdiff(intersect(iMat(parentSeg,:), iMat(s,:)), 0);
                     if overlapIdx(1)>1 && overlapIdx(end)<seqOfEvents(end,1) && overlapIdx(1)~=(iEvent(1,1)-seqOfEvents(1,1)+1)
                         idx = [overlapIdx(1)-1 overlapIdx(end)+1];
@@ -189,7 +197,7 @@ if preprocess
                     end
                     xRef = interp1(idx, [xMat(s,idx(1)) xMat(parentSeg,idx(2))], overlapIdx);
                     yRef = interp1(idx, [yMat(s,idx(1)) yMat(parentSeg,idx(2))], overlapIdx);
-                    
+
                     d = sqrt((xMat([s parentSeg],overlapIdx)-xRef).^2 + (yMat([s parentSeg],overlapIdx)-yRef).^2);
                     % remove overlap
                     rm = [s parentSeg];
@@ -198,25 +206,25 @@ if preprocess
                     tracksCoordAmpCG(rm,(overlapIdx-1)*8+(1:8)) = NaN;
                     tracksFeatIndxCG(rm,overlapIdx) = 0;
                     tracksFeatIndxCG(parentSeg,iMat(s,:)~=0) = tracksFeatIndxCG(s,iMat(s,:)~=0);
-                    
+
                     % concatenate segments
                     range8 = iMat(s,:);
                     range8(range8==0) = [];
                     range8 = (range8(1)-1)*8+1:range8(end)*8;
                     tracksCoordAmpCG(parentSeg, range8) = tracksCoordAmpCG(s, range8);
-                    
+
                     rmIdx = [rmIdx s]; %#ok<AGROW>
                 end % segment loop
             end
             rmIdx = unique(rmIdx);
             tracksFeatIndxCG(rmIdx,:) = [];
             tracksCoordAmpCG(rmIdx,:) = [];
-            
+
             % re-order seqOfEvents
             [~,ridx] = sort(seqOfEvents(:,1));
             %[~,lidx] = sort(ridx);
             seqOfEvents = seqOfEvents(ridx,:);
-            
+
             % indexes in seqOfEvents must be in order of segment appearance
             % replace with unique(seqOfEvents(:,3), 'stable') in future versions (>= 2012a)
             oldIdx = seqOfEvents(:,3);
@@ -229,7 +237,7 @@ if preprocess
             [~,newIdx] = ismember(seqOfEvents(:,4), idxMap);
             seqOfEvents(:,4) = newIdx;
             seqOfEvents(seqOfEvents(:,4)==0,4) = NaN;
-            
+
             % re-assign to trackinfo, re-arrange with new index
             [~,ridx] = sort(idxMap);
             [~,lidx] = sort(ridx);
@@ -268,14 +276,14 @@ buffer = repmat(opts.Buffer, [nTracks,1]);
 
 fprintf('Processing tracks (%s) - converting tracker output:     ', getShortPath(data));
 for k = 1:nTracks
-    
+
     % convert/assign structure fields
     seqOfEvents = trackinfo(k).seqOfEvents;
     tracksFeatIndxCG = trackinfo(k).tracksFeatIndxCG; % index of the feature in each frame
     nSeg = size(tracksFeatIndxCG,1);
-    
+
     segLengths = NaN(1,nSeg);
-    
+
     % Remove short merging/splitting branches
     msIdx = NaN(1,nSeg);
     for s = 1:nSeg
@@ -286,12 +294,12 @@ for k = 1:nTracks
             bounds(2) = bounds(2)-1; % correction if end is a merge
         end
         segLengths(s) = bounds(2)-bounds(1)+1;
-        
+
         % remove short (<4 frames) merging/splitting branches if:
         % -the segment length is a single frame
         % -the segment is splitting and merging from/to the same parent
         % -short segment merges, segment starts after track start
-        % -short segment splits, segment ends before track end
+        % -short segment splits, segment ends before track end - (ZYW) Why?
         msIdx(s) = segLengths(s)==1 || (segLengths(s)<4 && ( diff(ievents(:,4))==0 ||...
             (isnan(ievents(1,4)) && ~isnan(ievents(2,4)) && ievents(1,1)>seqOfEvents(1,1)) ||...
             (isnan(ievents(2,4)) && ~isnan(ievents(1,4)) && ievents(2,1)<seqOfEvents(end,1)) ));
@@ -308,18 +316,18 @@ for k = 1:nTracks
     else
         segIdx = 1:nSeg;
     end
-    
+
     tracks(k).nSeg = nSeg;
     firstIdx = trackinfo(k).seqOfEvents(1,1);
     lastIdx = trackinfo(k).seqOfEvents(end,1);
-    
+
     tracks(k).lifetime_s = (lastIdx-firstIdx+1)*data.framerate;
     tracks(k).start = firstIdx;
     tracks(k).end = lastIdx;
-    
+
     tracks(k).seqOfEvents = seqOfEvents;
     tracks(k).tracksFeatIndxCG = tracksFeatIndxCG; % index of the feature in each frame
-    
+
     if (buffer(k,1)<tracks(k).start) && (tracks(k).end<=nFrames-buffer(k,2)) % complete tracks
         tracks(k).visibility = 1;
     elseif tracks(k).start==1 && tracks(k).end==nFrames % persistent tracks
@@ -327,11 +335,11 @@ for k = 1:nTracks
     else
         tracks(k).visibility = 2; % incomplete tracks
     end
-    
+
     %==============================================================================
     % Initialize arrays
     %==============================================================================
-    
+
     % Segments are concatenated into single arrays, separated by NaNs.
     fieldLength = sum(segLengths)+nSeg-1;
     for f = 1:length(mcFieldNames)
@@ -339,9 +347,9 @@ for k = 1:nTracks
     end
     tracks(k).t = NaN(1, fieldLength);
     tracks(k).f = NaN(1, fieldLength);
-    
+
     if fieldLength>1
-        
+
         % start buffer size for this track
         sb = firstIdx - max(1, firstIdx-buffer(k,1));
         eb = min(lastIdx+buffer(k,2), data.movieLength)-lastIdx;
@@ -356,22 +364,22 @@ for k = 1:nTracks
             end
         end
     end
-    
+
     %==============================================================================
     % Read amplitude & background from detectionResults.mat (localization results)
     %==============================================================================
     delta = [0 cumsum(segLengths(1:end-1))+(1:nSeg-1)];
-    
+
     for s = 1:nSeg
         ievents = seqOfEvents(seqOfEvents(:,3)==segIdx(s), :);
         bounds = ievents(:,1);
         if ~isnan(ievents(2,4))
             bounds(2) = bounds(2)-1;
         end
-        
+
         nf = bounds(2)-bounds(1)+1;
         frameRange = frameIdx(bounds(1):bounds(2)); % relative to movie (also when movie is subsampled)
-        
+
         for i = 1:length(frameRange)
             idx = tracksFeatIndxCG(s, frameRange(i) - tracks(k).start + 1); % -> relative to IndxCG
             if idx ~= 0 % if not a gap, get detection values
@@ -383,7 +391,7 @@ for k = 1:nTracks
         tracks(k).t(delta(s)+(1:nf)) = (bounds(1)-1:bounds(2)-1)*data.framerate;
         tracks(k).f(delta(s)+(1:nf)) = frameRange;
     end
-    
+
     fprintf('\b\b\b\b%3d%%', round(100*k/nTracks));
 end
 fprintf('\n');
@@ -404,26 +412,26 @@ nTracks = numel(tracks);
 %=======================================
 fprintf('Processing tracks (%s) - classification:     ', getShortPath(data));
 for k = 1:nTracks
-    
+
     % gap locations in 'x' for all segments
     gapVect = isnan(tracks(k).x(mCh,:)) & ~isnan(tracks(k).t);
     tracks(k).gapVect = gapVect;
-    
+
     %=================================
     % Determine track and gap status
     %=================================
     sepIdx = isnan(tracks(k).t);
-    
+
     gapCombIdx = diff(gapVect | sepIdx);
     gapStarts = find(gapCombIdx==1)+1;
     gapEnds = find(gapCombIdx==-1);
     gapLengths = gapEnds-gapStarts+1;
-    
+
     segmentIdx = diff([0 ~(gapVect | sepIdx) 0]); % these variables refer to segments between gaps
     segmentStarts = find(segmentIdx==1);
     segmentEnds = find(segmentIdx==-1)-1;
     segmentLengths = segmentEnds-segmentStarts+1;
-    
+
     % loop over gaps
     nGaps = numel(gapLengths);
     if nGaps>0
@@ -431,13 +439,13 @@ for k = 1:nTracks
         gapStatus = 5*ones(1,nGaps);
         % gap valid if segments that precede/follow are > 1 frame or if gap is a single frame
         gapStatus(segmentLengths(gv)>1 & segmentLengths(gv+1)>1 | gapLengths(gv)==1) = 4;
-        
+
         sepIdx = sepIdx(gapStarts)==1;
         gapStatus(sepIdx) = [];
         gapStarts(sepIdx) = [];
         gapEnds(sepIdx) = [];
         nGaps = numel(gapStatus);
-        
+
         % fill position information for valid gaps using linear interpolation
         for g = 1:nGaps
             borderIdx = [gapStarts(g)-1 gapEnds(g)+1];
@@ -475,18 +483,18 @@ for f = 1:data.movieLength
     else
         mask = double(readtiff(data.maskPaths, f));
     end
-    
+
     % binarize
     mask(mask~=0) = 1;
     labels = bwlabel(mask);
-    
+
     for ch = 1:nCh
         if iscell(data.framePaths{mCh})
             frame = double(imread(data.framePaths{ch}{f}));
         else
             frame = double(readtiff(data.framePaths{ch}, f));
         end
-        
+
         %------------------------
         % Gaps
         %------------------------
@@ -494,17 +502,17 @@ for f = 1:data.movieLength
         currentGapsIdx = find(gapMap(:,f));
         for ki = 1:numel(currentGapsIdx)
             k = currentGapsIdx(ki);
-            
+
             % index in the track structure (.x etc)
             idxList = find(tracks(k).f==f & tracks(k).gapVect==1);
-            
+
             for l = 1:numel(idxList)
                 idx = idxList(l);
                 [t0] = interpTrack(tracks(k).x(ch,idx), tracks(k).y(ch,idx), frame, labels, annularMask, sigma, sigmaV(ch), kLevel);
                 tracks(k) = mergeStructs(tracks(k), ch, idx, t0);
             end
         end
-        
+
         %------------------------
         % start buffer
         %------------------------
@@ -512,15 +520,15 @@ for f = 1:data.movieLength
         cand = max(1, trackStarts-buffer(:,1)')<=f & f<trackStarts;
         % corresponding tracks, only if status = 1
         currentBufferIdx = find(cand & fullTracks);
-        
+
         for ki = 1:length(currentBufferIdx)
             k = currentBufferIdx(ki);
-            
+
             [t0] = interpTrack(tracks(k).x(ch,1), tracks(k).y(ch,1), frame, labels, annularMask, sigma, sigmaV(ch), kLevel);
             bi = f - max(1, tracks(k).start-buffer(k,1)) + 1;
             tracks(k).startBuffer = mergeStructs(tracks(k).startBuffer, ch, bi, t0);
         end
-        
+
         %------------------------
         % end buffer
         %------------------------
@@ -528,10 +536,10 @@ for f = 1:data.movieLength
         cand = trackEnds<f & f<=min(data.movieLength, trackEnds+buffer(:,2)');
         % corresponding tracks
         currentBufferIdx = find(cand & fullTracks);
-        
+
         for ki = 1:length(currentBufferIdx)
             k = currentBufferIdx(ki);
-            
+
             [t0] = interpTrack(tracks(k).x(ch,end), tracks(k).y(ch,end), frame, labels, annularMask, sigma, sigmaV(ch), kLevel);
             bi = f - tracks(k).end;
             tracks(k).endBuffer = mergeStructs(tracks(k).endBuffer, ch, bi, t0);
@@ -573,57 +581,57 @@ if postprocess
     % IIb) Compound tracks with invalid gaps
     % IIc) Compound tracks cut at beginning or end
     % IId) Compound tracks, persistent
-    
+
     % The categories correspond to index 1-8, in the above order
-    
+
     validGaps = arrayfun(@(t) max([t.gapStatus 4]), tracks)==4;
     singleIdx = [tracks.nSeg]==1;
     vis = [tracks.visibility];
-    
+
     mask_Ia = singleIdx & validGaps & vis==1;
     mask_Ib = singleIdx & ~validGaps & vis==1;
     idx_Ia = find(mask_Ia);
     idx_Ib = find(mask_Ib);
     trackLengths = [tracks.end]-[tracks.start]+1;
-    
+
     C = [mask_Ia;
         2*mask_Ib;
-        3*(singleIdx & vis==2);
+        3*(singleIdx & vis==2); % this should b3
         4*(singleIdx & vis==3);
         5*(~singleIdx & validGaps & vis==1);
         6*(~singleIdx & ~validGaps & vis==1);
-        7*(~singleIdx & vis==2);
+        7*(~singleIdx & vis==2); % this should be 7
         8*(~singleIdx & vis==3)];
-    
+
     C = num2cell(sum(C,1));
     % assign category
     [tracks.catIdx] = deal(C{:});
-    
+
     %----------------------------------------------------------------------------
     % II. Identify diffraction-limited tracks (CCPs)
     %----------------------------------------------------------------------------
     % Criterion: if all detected points pass AD-test, then track is a CCP.
     % (gaps in the track are not considered in this test)
-    
+
     % # diffraction-limited points per track (can be different from track length for compound tracks!)
     nPl = arrayfun(@(i) nansum(i.hval_AD(mCh,:) .* ~i.gapVect), tracks);
     isCCP = num2cell(nPl==0);
     [tracks.isCCP] = deal(isCCP{:});
     isCCP = [isCCP{:}];
-    
+
     % average mask area per track
     % meanMaskAreaCCP = arrayfun(@(i) nanmean(i.maskN), tracks(isCCP));
     % meanMaskAreaNotCCP = arrayfun(@(i) nanmean(i.maskN), tracks(~isCCP));
-    
+
     %----------------------------------------------------------------------------
     % III. Process 'Ib' tracks:
     %----------------------------------------------------------------------------
     % Reference distribution: class Ia tracks
     % Determine critical max. intensity values from class Ia tracks, per lifetime cohort
-    
+
     % # cohorts
     nc = numel(cohortBounds)-1;
-    
+
     % max intensities of all 'Ia' tracks
     maxInt = arrayfun(@(i) max(i.A(mCh,:)), tracks(idx_Ia));
     maxIntDistr = cell(1,nc);
@@ -634,27 +642,27 @@ if postprocess
         % critical values for test
         mappingThresholdMaxInt(i) = prctile(maxIntDistr{i}, 2.5);
     end
-    
+
     % get lifetime histograms before change
     processingInfo.lftHists.before = getLifetimeHistogram(data, tracks);
-    
+
     % Criteria for mapping:
     % - max intensity must be within 2.5th percentile of max. intensity distribution for 'Ia' tracks
     % - lifetime >= 5 frames (at 4 frames: track = [x o o x])
-    
+
     % assign category I to tracks that match criteria
     for k = 1:numel(idx_Ib);
         i = idx_Ib(k);
-        
+
         % get cohort idx for this track (logical)
         cIdx = cohortBounds(1:nc)<=tracks(i).lifetime_s & tracks(i).lifetime_s<cohortBounds(2:nc+1);
-        
+
         if max(tracks(i).A(mCh,:)) >= mappingThresholdMaxInt(cIdx) && trackLengths(i)>4
             tracks(i).catIdx = 1;
         end
     end
     processingInfo.lftHists.after = getLifetimeHistogram(data, tracks);
-    
+
     %----------------------------------------------------------------------------
     % IV. Apply threshold on buffer intensities
     %----------------------------------------------------------------------------
@@ -662,12 +670,12 @@ if postprocess
     % - the amplitude in at least 2 consecutive frames must be within background in each buffer
     % - the maximum buffer amplitude must be smaller than the maximum track amplitude
     Tbuffer = 2;
-    
+
     % loop through cat. Ia tracks
     idx_Ia = find([tracks.catIdx]==1);
     for k = 1:numel(idx_Ia)
         i = idx_Ia(k);
-        
+
         if ~isempty(tracks(i).startBuffer) && ~isempty(tracks(i).endBuffer)
             % H0: A = background (p-value >= 0.05)
             sbin = tracks(i).startBuffer.pval_Ar(mCh,:) < 0.05; % positions with signif. signal
@@ -682,52 +690,53 @@ if postprocess
             end
         end
     end
-    
+
     %----------------------------------------------------------------------------
     % V. Assign Cat. Ib to tracks that are not diffraction-limited CCPs
     %----------------------------------------------------------------------------
     if opts.ForceDiffractionLimited
         [tracks([tracks.catIdx]==1 & ~isCCP).catIdx] = deal(2);
     end
-    
+
     %----------------------------------------------------------------------------
     % VI. Cut tracks with sequential events (hotspots) into individual tracks
     %----------------------------------------------------------------------------
     splitCand = find([tracks.catIdx]==1 & arrayfun(@(i) ~isempty(i.gapIdx), tracks) & trackLengths>4);
-    
+
     % Loop through tracks and test whether gaps are at background intensity
     rmIdx = []; % tracks to remove from list after splitting
     newTracks = [];
     for i = 1:numel(splitCand);
         k = splitCand(i);
-        
+
         % all gaps
         gapIdx = [tracks(k).gapIdx{:}];
-        
+
         % # residual points
         npx = round((tracks(k).sigma_r(mCh,:) ./ tracks(k).SE_sigma_r(mCh,:)).^2/2+1);
         npx = npx(gapIdx);
-        
+
         % t-test on gap amplitude
         A = tracks(k).A(mCh, gapIdx);
         sigma_A = tracks(k).A_pstd(mCh, gapIdx);
         T = (A-sigma_A)./(sigma_A./sqrt(npx));
         pval = tcdf(T, npx-1);
-        
+
         % gaps with signal below background level: candidates for splitting
         splitIdx = pval<0.05;
         gapIdx = gapIdx(splitIdx==1);
-        
+
         % new segments must be at least 5 frames
         delta = diff([1 gapIdx trackLengths(k)]);
         gapIdx(delta(1:end-1)<5 | delta(2:end)<5) = [];
-        
+
         ng = numel(gapIdx);
         splitIdx = zeros(1,ng);
-        
+
         for g = 1:ng
-            
+
             % split track at gap position
+            % {ZYW & TP} Using median here picks the coordinates from the middle /frame/, not the average X,Y coords
             x1 = tracks(k).x(mCh, 1:gapIdx(g)-1);
             y1 = tracks(k).y(mCh, 1:gapIdx(g)-1);
             x2 = tracks(k).x(mCh, gapIdx(g)+1:end);
@@ -736,21 +745,25 @@ if postprocess
             muy1 = median(y1);
             mux2 = median(x2);
             muy2 = median(y2);
-            
+
             % projections
             v = [mux2-mux1; muy2-muy1];
             v = v/norm(v);
-            
+
+            % (ZYW & TP) sp below is total movement of spot before and after gap
+            % sp = summed projection
+
             % x1 in mux1 reference
             X1 = [x1-mux1; y1-muy1];
             sp1 = sum(repmat(v, [1 numel(x1)]).*X1,1);
-            
+
             % x2 in mux1 reference
             X2 = [x2-mux1; y2-muy1];
             sp2 = sum(repmat(v, [1 numel(x2)]).*X2,1);
-            
+
             % test whether projections are distinct distributions of points
             % may need to be replaced by outlier-robust version
+            % (ZYW) IS THERE A BETTER WAY TO TEST THIS???
             if mean(sp1)<mean(sp2) && prctile(sp1,95)<prctile(sp2,5)
                 splitIdx(g) = 1;
             elseif mean(sp1)>mean(sp2) && prctile(sp1,5)>prctile(sp2,95)
@@ -760,11 +773,11 @@ if postprocess
             end
         end
         gapIdx = gapIdx(splitIdx==1);
-        
+
         if ~isempty(gapIdx)
             % store index of parent track, to be removed at end
             rmIdx = [rmIdx k]; %#ok<AGROW>
-            
+
             % new tracks
             splitTracks = cutTrack(tracks(k), gapIdx);
             newTracks = [newTracks splitTracks]; %#ok<AGROW>
@@ -774,15 +787,15 @@ if postprocess
     % fprintf('# tracks cut: %d\n', numel(rmIdx));
     tracks(rmIdx) = [];
     tracks = [tracks newTracks];
-    
+
     % remove tracks with more gaps than frames
     nGaps = arrayfun(@(i) sum(i.gapVect), tracks);
     trackLengths = [tracks.end]-[tracks.start]+1;
-    
+
     % fprintf('# tracks with >50%% gaps: %d\n', sum(nGaps./trackLengths>=0.5));
     [tracks(nGaps./trackLengths>=0.5).catIdx] = deal(2);
-    
-    
+
+
     % Displacement statistics: remove tracks with >4 large frame-to-frame displacements
     nt = numel(tracks);
     dists = cell(1,nt);
@@ -798,13 +811,13 @@ if postprocess
             tracks(i).catIdx = 2;
         end
     end
-    
-    
+
+
     %==========================================
     % Compute displacement statistics
     %==========================================
     % Only on valid tracks (Cat. Ia)
-    trackIdx = find([tracks.catIdx]<5);
+    trackIdx = find([tracks.catIdx]<8);
     fprintf('Processing tracks (%s) - calculating statistics:     ', getShortPath(data));
     for ki = 1:numel(trackIdx)
         k = trackIdx(ki);
@@ -825,10 +838,10 @@ if postprocess
         fprintf('\b\b\b\b%3d%%', round(100*ki/numel(trackIdx)));
     end
     fprintf('\n');
-    
+
     fprintf('Processing for %s complete - valid/total tracks: %d/%d (%.1f%%).\n',...
         getShortPath(data), sum([tracks.catIdx]==1), numel(tracks), sum([tracks.catIdx]==1)/numel(tracks)*100);
-    
+
 end % postprocessing
 
 
@@ -914,5 +927,3 @@ cn = fieldnames(cs);
 for f = 1:numel(cn)
     ps.(cn{f})(ch,idx) = cs.(cn{f});
 end
-
-

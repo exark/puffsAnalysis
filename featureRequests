@@ -1,0 +1,7 @@
+cmeDataViewer:
+* X,Y, and Z coordinates
+* Highlight selected pit in kymograph as well as main window
+
+runTrackProcessing:
+* Add in visibility category for track that starts after agonist addition and stays until end of movies
+* Set default buffer size to [10 1]
