@@ -7,7 +7,7 @@
 %          'np' : number of points to use for randomized detections
 %    'Cutoff_f' : minimum track length to consider for classification (in frames)
 %
-% Notes: This function modifies the output of runTrackProcessing(), 
+% Notes: This function modifies the output of runTrackProcessing(),
 %        by default saved in Tracking/ProcessedTracks.mat
 
 % Francois Aguet, October 2010 (last modified: 10/09/2012)
@@ -23,7 +23,7 @@ ip.addParamValue('FileName', 'ProcessedTracks.mat', @ischar);
 ip.addParamValue('Cutoff_f', 5, @isscalar);
 ip.addParamValue('np', 10000);
 ip.addParamValue('Mode', 'random', @(x) any(strcmpi(x, {'random', 'maskRatio'})));
-ip.addParamValue('MasterCh', 1, @(x) numel(x)==1); 
+ip.addParamValue('MasterCh', 1, @(x) numel(x)==1);
 ip.parse(data, varargin{:});
 
 % reset random number generator to ensure reproducibility
@@ -75,7 +75,7 @@ pSlaveSignal = cell(1,nf);
 
 parfor f = 1:nf;
     k = frameIdx(f);
-    
+
     %-----------------------------------------------
     % Generate masks
     %-----------------------------------------------
@@ -87,8 +87,8 @@ parfor f = 1:nf;
     end
     ccpMask(ccpMask~=0) = 1;
     ccpMask = imdilate(ccpMask, strel('disk', 1*w));
-    
-    
+
+
     %-----------------------------------------------
     % Probability of randomly occurring slave signal
     %-----------------------------------------------
@@ -97,7 +97,7 @@ parfor f = 1:nf;
             %=================================================================================
             % Approach 1: fit at random positions outside CCPs, build distribution of 'A'
             %=================================================================================
-            
+
             %-----------------------------------------
             % Distribution of points within cell
             %-----------------------------------------
@@ -106,19 +106,19 @@ parfor f = 1:nf;
             ya = (ny-2*w-1)*rand(1,opts.np)+w+1;
             xi = round(xa);
             yi = round(ya);
-            
+
             % remove points outside of mask or within border
             linIdxA = sub2ind([ny nx], yi, xi);
             rmIdx = cellmask(linIdxA)==0 | xi<=w | yi<=w | xi>nx-w | yi>ny-w; %#ok<PFBNS>
             xa(rmIdx) = [];
             ya(rmIdx) = [];
             linIdxA(rmIdx) = [];
-            
+
             %-----------------------------------------
             % Distribution of points outside CCSs
             %-----------------------------------------
             mask = cellmask - ccpMask;
-            
+
             % generate candidate points
             x = [];
             y = [];
@@ -128,7 +128,7 @@ parfor f = 1:nf;
                 ycand = (ny-2*w-1)*rand(1,opts.np)+w+1;
                 xi = round(xcand);
                 yi = round(ycand);
-                
+
                 % remove points outside of mask or within border
                 linIdxCand = sub2ind([ny nx], yi, xi);
                 validIdx = mask(linIdxCand)==1 & xi>w & yi>w & xi<=nx-w & yi<=ny-w;
@@ -139,8 +139,8 @@ parfor f = 1:nf;
             x = x(1:opts.np);
             y = y(1:opts.np);
             linIdx = linIdx(1:opts.np);
-            
-            
+
+
             bgA{f} = NaN(nc,opts.np);
             pSlaveSignal{f} = NaN(nc,numel(xa));
             for c = sCh
@@ -149,15 +149,15 @@ parfor f = 1:nf;
                 else
                     frame = double(readtiff(data.framePaths{c}, k));
                 end
-                
+
                 % get local min & max for initial c and A
                 ww = 2*ceil(4*sigma(c))+1; %#ok<PFBNS>
                 maxF = ordfilt2(frame, ww^2, true(ww));
                 minF = ordfilt2(frame, 1, true(ww));
-                
+
                 pstruct = fitGaussians2D(frame, xa, ya, maxF(linIdxA), sigma(c), minF(linIdxA), 'Ac');
-                pSlaveSignal{f}(c,:) = sum(pstruct.pval_Ar < 0.05) / numel(xa);
-                
+                pSlaveSignal{f}(c,:) = sum(pstruct.pval_Ar < 0.0001) / numel(xa);
+
                 % estimate background amplitude
                 pstruct = fitGaussians2D(frame, x, y, maxF(linIdx), sigma(c), minF(linIdx), 'Ac');
                 bgA{f}(c,:) = pstruct.A;
@@ -168,79 +168,79 @@ parfor f = 1:nf;
 %             % Approach 2: compute mask of significant pixels in slave channel (index 2)
 %             %=================================================================================
 %             % Note: the following code is adapted from pointSourceDetection.m
-%             
+%
 %             % Gaussian kernel
 %             x = -w:w;
 %             g = exp(-x.^2/(2*sigma^2));
 %             u = ones(1,length(x));
-%             
+%
 %             % convolutions
 %             imgXT = padarrayXT(frame, [w w], 'symmetric');
 %             fg = conv2(g', g, imgXT, 'valid');
 %             fu = conv2(u', u, imgXT, 'valid');
 %             fu2 = conv2(u', u, imgXT.^2, 'valid');
-%             
+%
 %             % Laplacian of Gaussian
 %             gx2 = g.*x.^2;
 %             imgLoG = 2*fg/sigma^2 - (conv2(g, gx2, imgXT, 'valid')+conv2(gx2, g, imgXT, 'valid'))/sigma^4;
 %             imgLoG = imgLoG / (2*pi*sigma^2);
-%             
+%
 %             % 2-D kernel
 %             g = g'*g;
 %             n = numel(g);
 %             gsum = sum(g(:));
 %             g2sum = sum(g(:).^2);
-%             
+%
 %             % solution to linear system
 %             A_est = (fg - gsum*fu/n) / (g2sum - gsum^2/n);
 %             c_est = (fu - A_est*gsum)/n;
-%             
+%
 %             J = [g(:) ones(n,1)]; % g_dA g_dc
 %             C = inv(J'*J);
-%             
+%
 %             f_c = fu2 - 2*c_est.*fu + n*c_est.^2; % f-c
 %             RSS = A_est.^2*g2sum - 2*A_est.*(fg - c_est*gsum) + f_c;
 %             sigma_e2 = RSS/(n-3);
-%             
+%
 %             sigma_A = sqrt(sigma_e2*C(1,1));
-%             
+%
 %             % standard deviation of residuals
 %             sigma_res = sqrt((RSS - (A_est*gsum+n*c_est - fu)/n)/(n-1));
-%             
+%
 %             SE_sigma_c = sigma_res/sqrt(2*(n-1)) * kLevel;
 %             df2 = (n-1) * (sigma_A.^2 + SE_sigma_c.^2).^2 ./ (sigma_A.^4 + SE_sigma_c.^4);
 %             scomb = sqrt((sigma_A.^2 + SE_sigma_c.^2)/n);
 %             T = (A_est - sigma_res*kLevel) ./ scomb;
 %             pval = tcdf(-T, df2);
-%             
+%
 %             % mask of admissible positions for local maxima
 %             mask = pval < 0.05;
-%             
+%
 %             % all local max
 %             allMax = locmax2d(imgLoG, 2*ceil(sigma)+1);
-%             
+%
 %             % local maxima above threshold in image domain
 %             imgLM = allMax .* mask;
-%             
+%
 %             if sum(imgLM(:))~=0 % no local maxima found, likely a background image
-%                 
+%
 %                 % -> set threshold in LoG domain
 %                 logThreshold = min(imgLoG(imgLM~=0));
 %                 logMask = imgLoG >= logThreshold;
-%                 
+%
 %                 % combine masks
 %                 mask = mask | logMask;
 %             end
 %             %---------------------------------------------------------------------------------
 %             % Note: end of pointSourceDetection.m code
 %             %---------------------------------------------------------------------------------
-%             
+%
 %             %=================================================================================
 %             % Ratio between significant pixels in slave channel and master channel
 %             %=================================================================================
 %             %mask = mask & ccpMask; % areas of significant slave signal within EAZ
 %             %pSlaveSignal(i) = sum(mask(:)) / sum(ccpMask(:));
-%             
+%
 %             pSlaveSignal(i) = sum(mask(:)) / sum(cellmask(:));
     end
 end
@@ -261,7 +261,7 @@ bg95 = prctile([bgA{:}], 95, 2);
 % Loops through all the tracks
 nt = numel(ts.tracks);
 for k = 1:nt
-    
+
     np = numel(ts.tracks(k).t); % # points/track
     ts.tracks(k).isDetected = NaN(nc, np);
     ts.tracks(k).significantMaster = NaN(nc,1);
@@ -269,12 +269,12 @@ for k = 1:nt
     ts.tracks(k).significantSlave = NaN(nc,1);
 
     for c = sCh % loop through all slave channels
-        
+
         % significance test, binarization
         npx = round((ts.tracks(k).sigma_r(c,:) ./ ts.tracks(k).SE_sigma_r(c,:)).^2/2+1);
         A = ts.tracks(k).A(c,:);
         sigma_A = ts.tracks(k).A_pstd(c,:);
-        
+
         % significance test for independent detecion
         sigma_r = ts.tracks(k).sigma_r(c,:) * kLevel;
         SE_sigma_r = ts.tracks(k).SE_sigma_r(c,:) * kLevel;
@@ -283,10 +283,10 @@ for k = 1:nt
         T = (A - sigma_r) ./ scomb;
         pval = tcdf(-T, df2);
         ts.tracks(k).isDetected(c,:) = pval < 0.05;
-        
+
         % test whether # significant points > 95th percentile of 'random' distribution
         ts.tracks(k).significantMaster(c) = nansum(ts.tracks(k).isDetected(c,:)) > binoinv(0.95, np, pSlave(c));
-        
+
         % significance test relative to background slave signal
         sigma_r = bg95(c);
         SE_sigma_r = sigma_r ./ sqrt(2*npx-1);
@@ -322,18 +322,18 @@ end
 
 % for k = 1:nt
 %     c = sCh(1);
-%     
+%
 %     if ts.tracks(k).catIdx==1 && numel(ts.tracks(k).t)>=5
 %         % binary classification (hval_Ar==1, pval_Ar<0.05 if significant signal)
 %         bc = [ts.tracks(k).hval_Ar(mCh,end-4:end) == ts.tracks(k).hval_Ar(c,end-4:end)...
 %             (ts.tracks(k).endBuffer.pval_Ar(mCh,1:2)<0.05)==(ts.tracks(k).endBuffer.pval_Ar(c,1:2)<0.05)];
-%         
+%
 %         mEnd = [ts.tracks(k).A(mCh,end-4:end) ts.tracks(k).endBuffer.A(mCh,1:2)];
 %         sEnd = [ts.tracks(k).A(sCh,end-4:end) ts.tracks(k).endBuffer.A(sCh,1:2)];
 %         mEnd = mEnd/max(mEnd);
 %         sEnd = sEnd/max(sEnd);
 %         K = sum(mEnd.*sEnd)/sqrt(sum(mEnd.^2)*sum(sEnd.^2));
-%         
+%
 %         ts.tracks(k).corrDisappearance = (sum(bc)>=6) && K>0.8 &&...
 %             sum(ts.tracks(k).isDetected(mCh,end-4:end))>=4 && sum(ts.tracks(k).isDetected(sCh,end-4:end))>=4;
 %     end

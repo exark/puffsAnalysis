@@ -169,8 +169,8 @@ for p = 1:np
         end
         
         % set any other components to NaN
-         (TP)window = Nan where maskWindow is not background
-        window(maskWindow~=0) = NaN
+        % (TP)window = Nan where maskWindow is not background
+        window(maskWindow~=0) = NaN;
         % (TP) npx = number of pixels that are bg
         npx = sum(isfinite(window(:)));
         
