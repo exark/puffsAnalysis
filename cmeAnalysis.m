@@ -11,7 +11,7 @@
 %  'TrackingGapLength' : value defines the maximum number of consecutive missed frames in a trajectory. Default: 2
 %     'TrackingRadius' : [minRadius maxRadius] search radii for frame-to-frame linking and gap closing. Default: [3 6]
 %       'ChannelNames' : cell array of channel names (e.g., {'EGFP-CLCa'}). Default: fluorophore names
-%          'Overwrite' : true|[false] overwrites results of previous analyses. 
+%          'Overwrite' : true|[false] overwrites results of previous analyses.
 %           'MasterCh' : which channel from 'data' should be used as the master in runDetection. Default: 1
 %
 % Outputs:
@@ -20,7 +20,7 @@
 %
 % The function will ask for acquisition parameters and subsequently for the data location. The following acquisition
 % parameters are required for the Gaussian point spread function (PSF) model used for CCP detection:
-% numerical aperture (NA) and magnification of the objective used, and the physical pixel size of the camera (in µm).
+% numerical aperture (NA) and magnification of the objective used, and the physical pixel size of the camera (in ï¿½m).
 %
 %
 % Notes:
@@ -107,7 +107,7 @@ runTracking(data, settings, opts{:});
 %-------------------------------------------------------------------------------
 runTrackProcessing(data, opts{:});
 if numel(data(1).channels)>1
-    runSlaveChannelClassification(data, opts{:}, 'np', 5000, 'MasterCh', ip.Results.MasterCh);
+    runSlaveChannelClassification(data, opts{:}, 'np', 5000, 'MasterCh', ip.Results.MasterCh,'Overwrite',true);
 end
 
 %-------------------------------------------------------------------------------

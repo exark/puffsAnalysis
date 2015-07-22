@@ -156,7 +156,7 @@ parfor f = 1:nf;
                 minF = ordfilt2(frame, 1, true(ww));
 
                 pstruct = fitGaussians2D(frame, xa, ya, maxF(linIdxA), sigma(c), minF(linIdxA), 'Ac');
-                pSlaveSignal{f}(c,:) = sum(pstruct.pval_Ar < 0.0001) / numel(xa);
+                pSlaveSignal{f}(c,:) = sum(pstruct.pval_Ar < 0.05) / numel(xa);
 
                 % estimate background amplitude
                 pstruct = fitGaussians2D(frame, x, y, maxF(linIdx), sigma(c), minF(linIdx), 'Ac');
