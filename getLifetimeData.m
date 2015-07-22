@@ -29,7 +29,7 @@ if numel(rescale)==1
     rescale = repmat(rescale, [nCh 1]);
 end
 
-fnames = {'lifetime_s', 'trackLengths', 'start', 'catIdx', 'A', 'A_pstd',...
+fnames = {'lifetime_s', 'trackLengths', 'start', 'catIdx', 'A', 'A_pstd', 'c', 'c_pstd',... %(TP) added c and c_pstd
     'sigma_r', 'SE_sigma_r', 'sbA', 'ebA', 'sbSigma_r', 'ebSigma_r', 'gapMat_Ia'};
 lftData(1:nd) = cell2struct(cell(size(fnames)), fnames, 2);
 vnames = fnames(1:4);
@@ -55,7 +55,7 @@ parfor i = 1:nd
         end
         
         % store intensities of cat. Ia tracks
-        idx_Ia = find([tracks.catIdx]==1);
+        idx_Ia = find([tracks.catIdx]==1); %(TP) should we change it so that all intensities are stored?
         tracks = tracks(idx_Ia);
         
         nt = numel(tracks);
@@ -67,6 +67,8 @@ parfor i = 1:nd
             nf = data(i).movieLength;
             lftData(i).A = NaN(nt,nf,nCh);
             lftData(i).A_pstd = NaN(nt,nf,nCh);
+            lftData(i).c = NaN(nt,nf,nCh); %(TP) added
+            lftData(i).c_pstd = Nan(nt,nf,nCh); %(TP) added
             lftData(i).sigma_r = NaN(nt,nf,nCh);
             lftData(i).SE_sigma_r = NaN(nt,nf,nCh);
             
