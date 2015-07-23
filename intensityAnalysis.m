@@ -1,6 +1,6 @@
 % intensityAnalysis(data, varargin) outputs graphs looking at pit intensities
 
-% Zach Weinberg 7/22/2015
+% Zach Weinberg, Tiffany Phan 7/22/2015
 
 function intensityAnalysis(data, varargin)
 
@@ -67,7 +67,3 @@ parfor i = 1:length(data) %numcells
     allLT(i,t) = lt
   end
 end
-scatter(
-
-
-
