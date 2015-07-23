@@ -68,7 +68,7 @@ parfor i = 1:nd
             lftData(i).A = NaN(nt,nf,nCh);
             lftData(i).A_pstd = NaN(nt,nf,nCh);
             lftData(i).c = NaN(nt,nf,nCh); %(TP) added
-            lftData(i).c_pstd = Nan(nt,nf,nCh); %(TP) added
+            lftData(i).c_pstd = NaN(nt,nf,nCh); %(TP) added
             lftData(i).sigma_r = NaN(nt,nf,nCh);
             lftData(i).SE_sigma_r = NaN(nt,nf,nCh);
             
