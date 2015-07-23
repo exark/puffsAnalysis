@@ -87,7 +87,7 @@ cmap(outlierIdx,:) = [];
 
 
 if ip.Results.PoolDatasets
-    pnames = {'lifetime_s', 'start', 'catIdx', 'A', 'lifetime_s_all', 'start_all', 'catIdx_all'};
+    pnames = {'lifetime_s', 'start', 'catIdx', 'A', 'lifetime_s_all', 'start_all', 'catIdx_all', 'c'};% (TP) added c
     if isfield(lftData, 'significantMaster')
         pnames = [pnames 'significantMaster'];
     end

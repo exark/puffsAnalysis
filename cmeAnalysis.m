@@ -124,7 +124,7 @@ else
     display = 'off';
 end
 lopts = {'Display', display, 'RemoveOutliers', false, 'Colormap', cmap, 'DisplayMode', ip.Results.DisplayMode,...
-    'SlaveNames', chNames(2:end), 'FirstNFrames', ip.Results.FirstNFrames, 'Overwrite', ip.Results.Overwrite};
+    'SlaveNames', chNames(2:end), 'FirstNFrames', ip.Results.FirstNFrames, 'Overwrite', true}; %(TP) changed to true
 if isempty(ip.Results.ControlData)
     res.lftRes = runLifetimeAnalysis(data, lopts{:});
 else
