@@ -75,7 +75,7 @@ maxA = cell(nd,1);
 maxALft = cell(nd,1);
 lft = cell(nd,1);
 for k = 1:nd
-    na = numel(data{k});
+    na = numel(data{k}); %(TP)num of cells
     
     nCh = numel(data{k}(1).channels);
     
@@ -87,10 +87,10 @@ for k = 1:nd
             if ~isempty(ip.Results.FirstNFrames)
                 [tmp, maxIdx] = max(lftData{k}(i).A(:,ip.Results.Cutoff_f:ip.Results.FirstNFrames,c),[],2);
             else
-                [tmp, maxIdx] = max(lftData{k}(i).A(:,ip.Results.Cutoff_f:end,c),[],2);
+                [tmp, maxIdx] = max(lftData{k}(i).A(:,ip.Results.Cutoff_f:end,c),[],2); %(TP)gets max and its index
             end
-            maxA{k}{i}(c,:) = tmp;
-            maxALft{k}{i}(c,:) = (maxIdx-1)*data{k}(i).framerate;
+            maxA{k}{i}(c,:) = tmp; %(TP)stores max value
+            maxALft{k}{i}(c,:) = (maxIdx-1)*data{k}(i).framerate; %(TP) uses maxIdx as frame to calculate lifetime at which maxA occurs 
         end
     end
 end

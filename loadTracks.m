@@ -119,7 +119,7 @@ for k = 1:numel(category);
     idx = idx | idx0;
 end
 idx = idx & [tracks.lifetime_s] >= cutoff_s;
-tracks = tracks(idx);
+tracks = tracks(idx); 
 
 if ~isempty(ip.Results.MaxIntensityThreshold)
     maxA = arrayfun(@(i) max(i.A(mCh,:)), tracks);
