@@ -42,7 +42,7 @@ else
     if ~iscell(data)
         data = {data};
     end
-    nd = numel(data); %(TP) with data as a cell, all the cells' info is put into 1 cell, -> nd always = 1
+    nd = numel(data); %(TP) with data as a cell, all info is put into 1 cell, -> nd always = 1
     lftData = cell(1,nd);
     for i = 1:nd
         lftData{i} = getLifetimeData(data{i}, 'Overwrite', false, 'Mask', true,...
