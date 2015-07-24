@@ -34,25 +34,29 @@ significantMasters = significantMasters(:,catFilter);
 significantSlaves = significantSlaves(:,catFilter);
 
 outputStr = 'Total tracks detected: %d\n';
-
-sprintf('The price of %s on %d/%d/%d was $%.2f.', ...
-        'bread', 7, 1, 2006, 2.49)
     
 %load cellmask
 maskPath = [data.source 'Detection' filesep 'cellmask.tif'];
 mask = double(imread(maskPath));
 maskLog = mask == 1;
 mSize = sqrt(numel(mask(maskLog)));
-mSizeStr = sprintf('Total number of pixels^2 is %d\n', ... 
+mSizeStr = sprintf('Total number of pixels^2 is %d\n',...
     mSize);
+
+%normalize total pitcount to cellmask size 
+normTracks = total/mSize;
+normStr = 'Normalized total track count: %d tracks/pixels^2\n';
 
 for i=2:numel(data.channels)
     counts(i) = numel(find(significantMasters(i,:,:) == 1));
+    normCounts(i) = counts(i)/mSize;
     if isempty(ip.Results.ChannelNames)
        outputStr = [outputStr 'Significant tracks in channel ' i ': %d\n'];
+       normStr = [normStr 'Normalized tracks in channel' i ': %d\n'];
     else
        outputStr = [outputStr ip.Results.ChannelNames{i} '-positive tracks: %d\n'];
+       normStr = [normStr ip.Results.ChannelNames{i} '-normalized positive tracks: %d\n'];
     end
 end
 
-fprintf(mSizeStr, outputStr, [total counts(2:end)]);
+fprintf(mSizeStr, outputStr, [total counts(2:end)], normStr, [normTracks normCounts(2:end)])
