@@ -37,7 +37,7 @@ ip.addParamValue('DetectionFile', 'detection_v2.mat', @ischar);
 ip.addParamValue('Frames', arrayfun(@(x) 1:x.movieLength, data, 'UniformOutput', false), @(x) numel(unique(diff(x)))==1); %check that frame rate is constant
 ip.addParamValue('Preprocess', true, @islogical);
 ip.addParamValue('Postprocess', true, @islogical);
-ip.addParamValue('CohortBounds_s', [10 20 40 60 80 100 125 150 200 250 300 350 400 450 500]); % used in post-proc
+ip.addParamValue('CohortBounds_s', [50 100 150 200 250 300 350 400 500 1000]); % used in post-proc
 ip.addParamValue('ForceDiffractionLimited', true, @islogical);
 ip.parse(data, varargin{:});
 overwrite = ip.Results.Overwrite;

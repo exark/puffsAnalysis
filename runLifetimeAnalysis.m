@@ -17,8 +17,8 @@ function [lftRes, res] = runLifetimeAnalysis(data, varargin)
 ip = inputParser;
 ip.CaseSensitive = false;
 ip.addRequired('data', @(x) isstruct(x) && numel(unique([data.framerate]))==1);
-ip.addOptional('lb', [1  11 16 21 41 61]);
-ip.addOptional('ub', [10 15 20 40 60 120]);
+ip.addOptional('lb', [1  51 101 151 201 301 401]);
+ip.addOptional('ub', [50 100 150 200 300 400 1000]);
 ip.addParamValue('Display', 'on', @(x) any(strcmpi(x, {'on', 'off', 'all'})));
 ip.addParamValue('DisplayMode', 'print', @(x) any(strcmpi(x, {'print', 'screen'})));
 ip.addParamValue('ProcessedTracks', 'ProcessedTracks.mat', @ischar);
@@ -76,7 +76,7 @@ res = struct([]);
 
 %(ZW) overwrite set for debug, replace with ip.Results.Overwrite
 
-[lftData, outlierIdx] = getLifetimeData(data, 'Overwrite', true,... 
+[lftData, outlierIdx] = getLifetimeData(data, 'Overwrite', true,...
     'ReturnValidOnly', false, 'ExcludeVisitors', ip.Results.ExcludeVisitors, 'Cutoff_f', cutoff_f,...
     'Scale', ip.Results.Rescale, 'DisplayScaling', any(strcmpi(ip.Results.Display, {'on','all'})),...
     'RemoveOutliers', ip.Results.RemoveOutliers, 'Mask', true, 'Colormap', ip.Results.Colormap, ...

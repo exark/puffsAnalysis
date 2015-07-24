@@ -63,6 +63,8 @@ function [res, data] = cmeAnalysis(varargin)
 ip = inputParser;
 ip.CaseSensitive = false;
 ip.addOptional('data', [], @isstruct);
+ip.addOptional('lb', [1  51 101 151 201 301 401]);
+ip.addOptional('ub', [50 100 150 200 300 400 1000]);
 ip.addParamValue('Overwrite', false, @islogical);
 ip.addParamValue('GaussianPSF', 'model', @(x) any(strcmpi(x, {'data', 'model'})));
 ip.addParamValue('TrackingRadius', [3 6], @(x) numel(x)==2);
@@ -76,6 +78,8 @@ ip.addParamValue('DisplayMode', 'print', @(x) any(strcmpi(x, {'print', 'screen'}
 ip.addParamValue('MasterCh', 1, @(x) numel(x)==1);
 ip.parse(varargin{:});
 data = ip.Results.data;
+lb = ip.Results.lb;
+ub = ip.Results.lb;
 
 if isempty(data)
     parameters = ip.Results.Parameters;
@@ -140,4 +144,4 @@ end
 
 res.cohorts = plotIntensityCohorts(data, 'MaxIntensityThreshold', res.lftRes.MaxIntensityThreshold,...
     'ShowBackground', false, 'DisplayMode', 'screen', 'ScaleSlaveChannel', false,...
-    'ShowLegend', false, 'ShowPct', false, 'SlaveName', chNames(2:end));
+    'ShowLegend', false, 'ShowPct', false, 'SlaveName', chNames(2:end), 'CohortBounds_s', ub);
