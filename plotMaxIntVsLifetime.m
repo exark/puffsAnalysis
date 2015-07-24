@@ -8,8 +8,8 @@
 %            xa : vector of intensity bin centers
 %
 % Options ('specifier', value):
-%    
-%      'ExcludeVisitors' : true|{false}
+%
+%      'ExcludeVisitors' :ï¿½true|{false}
 %             'Cutoff_f' : Minimum track length, in frames
 %         'FirstNFrames' : Calculates maximum intensity over the first N frames only.
 %                          If this is a vector, plots for the individual values are generated.
@@ -38,7 +38,7 @@ ip.addParamValue('Legend', []);
 ip.addParamValue('Parent', []);
 ip.addParamValue('LifetimeData', 'LifetimeData.mat');
 ip.addParamValue('ProcessedTracks', 'ProcessedTracks.mat');
-ip.addParamValue('PlotIndividual', false, @islogical);
+ip.addParamValue('PlotIndividual', true, @islogical);
 ip.addParamValue('NormX', true, @islogical);
 ip.addParamValue('FontSize', 10);
 ip.addParamValue('Width', 4, @isposint);
@@ -47,7 +47,7 @@ ip.parse(data, varargin{:});
 ch = ip.Results.Channel;
 
 if ip.Results.PlotIndividual
-    lftData = getLifetimeData(data, 'Overwrite', false, 'Mask', true,...
+    lftData = getLifetimeData(data, 'Overwrite', true, 'Mask', true,...
         'ProcessedTracks', ip.Results.ProcessedTracks, 'LifetimeData', ip.Results.LifetimeData,...
         'ReturnValidOnly', false, 'AmplitudeCorrectionFactor', ip.Results.AmplitudeCorrection);
     data = arrayfun(@(i) i, data, 'unif', 0);
@@ -76,9 +76,9 @@ maxALft = cell(nd,1);
 lft = cell(nd,1);
 for k = 1:nd
     na = numel(data{k}); %(TP)num of cells
-    
+
     nCh = numel(data{k}(1).channels);
-    
+
     lft{k} = cell(1,na);
     for i = 1:na
         lft{k}{i} = lftData{k}(i).lifetime_s;
@@ -90,7 +90,7 @@ for k = 1:nd
                 [tmp, maxIdx] = max(lftData{k}(i).A(:,ip.Results.Cutoff_f:end,c),[],2); %(TP)gets max and its index
             end
             maxA{k}{i}(c,:) = tmp; %(TP)stores max value
-            maxALft{k}{i}(c,:) = (maxIdx-1)*data{k}(i).framerate; %(TP) uses maxIdx as frame to calculate lifetime at which maxA occurs 
+            maxALft{k}{i}(c,:) = (maxIdx-1)*data{k}(i).framerate; %(TP) uses maxIdx as frame to calculate lifetime at which maxA occurs
         end
     end
 end
@@ -122,7 +122,7 @@ for k = 1:nd
         lv = vertcat(lv{:});
         %lv = [maxALft{k}{:}];
         %lv = lv(ch,:);
-        
+
         densityplot(lv, av, xl, xa, 'Parent', ha(k), 'DisplayFunction', ip.Results.DisplayFunction, 'NormX', ip.Results.NormX);
         text(xl(end)/2, xa(end), legendText{k}, 'VerticalAlignment', 'bottom',...
             'HorizontalAlignment', 'center', 'Parent', ha(k), 'FontSize', ip.Results.FontSize);

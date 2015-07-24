@@ -29,22 +29,25 @@ if numel(rescale)==1
     rescale = repmat(rescale, [nCh 1]);
 end
 
-fnames = {'lifetime_s', 'trackLengths', 'start', 'catIdx', 'A', 'A_pstd', 'c', 'c_pstd',... %(TP) added c and c_pstd
-    'sigma_r', 'SE_sigma_r', 'sbA', 'ebA', 'sbSigma_r', 'ebSigma_r', 'gapMat_Ia'};
+
+fnames = {'lifetime_s', 'trackLengths', 'start', 'catIdx',...
+    'A_all', 'A_pstd_all', 'c', 'c_pstd',...  %(TP) added c and c_pstd, (ZW) added _all fields
+    'A', 'A_pstd','sigma_r', 'SE_sigma_r', 'sbA', 'ebA', 'sbSigma_r', 'ebSigma_r', 'gapMat_Ia'};
 lftData(1:nd) = cell2struct(cell(size(fnames)), fnames, 2);
 vnames = fnames(1:4);
-mnames = fnames(5:end);
+tznames = fnames(5:8);
+mnames = fnames(9:end);
 
-parfor i = 1:nd
+for i = 1:nd
     fpath = [data(i).source 'Analysis' filesep ip.Results.LifetimeData]; %#ok<PFBNS>
     if ~(exist(fpath, 'file')==2) || ip.Results.Overwrite
-        
+
         tracks = loadTracks(data(i), 'Mask', ip.Results.Mask, 'Category', 'all', 'Cutoff_f', 2,...
-            'AnalysisPath', ip.Results.AnalysisPath, 'FileName', ip.Results.ProcessedTracks);
-        
+            'AnalysisPath', ip.Results.AnalysisPath, 'FileName', ip.Results.ProcessedTracks);  % (ZW) sort set to false to return fields in order
+
         % concatenate amplitudes of master channel into matrix
         trackLengths = [tracks.end]-[tracks.start]+1;
-        
+
         lftData(i).lifetime_s = [tracks.lifetime_s]';
         lftData(i).trackLengths = trackLengths';
         lftData(i).start = [tracks.start]';
@@ -53,25 +56,32 @@ parfor i = 1:nd
             lftData(i).significantMaster = [tracks.significantMaster]';
             lftData(i).significantSlave = [tracks.significantSlave]';
         end
-        
+
+        % (ZW) we need a loop before filtering tracks to save A_all and c
+        nt = numel(tracks);
+        nf = data(i).movieLength;
+
+        lftData(i).A_all = arrayfun(@(x) x.A', tracks, 'unif', 0).';
+        lftData(i).A_pstd_all = arrayfun(@(x) x.A_pstd', tracks, 'unif', 0).';
+        lftData(i).c = arrayfun(@(x) x.c, tracks, 'unif', 0).';
+        lftData(i).c_pstd = arrayfun(@(x) x.c_pstd, tracks, 'unif', 0).';
+
         % store intensities of cat. Ia tracks
-        idx_Ia = find([tracks.catIdx]==1); %(TP) should we change it so that all intensities are stored?
+        idx_Ia = find([tracks.catIdx]==1);
         tracks = tracks(idx_Ia);
-        
+
         nt = numel(tracks);
         if nt>0
             nsb = numel(tracks(1).startBuffer.t);
             neb = numel(tracks(1).endBuffer.t);
-            
+
             % store intensity matrices
             nf = data(i).movieLength;
             lftData(i).A = NaN(nt,nf,nCh);
             lftData(i).A_pstd = NaN(nt,nf,nCh);
-            lftData(i).c = NaN(nt,nf,nCh); %(TP) added
-            lftData(i).c_pstd = NaN(nt,nf,nCh); %(TP) added
             lftData(i).sigma_r = NaN(nt,nf,nCh);
             lftData(i).SE_sigma_r = NaN(nt,nf,nCh);
-            
+
             lftData(i).sbA = NaN(nt,nsb,nCh);
             lftData(i).ebA = NaN(nt,neb,nCh);
             lftData(i).sbSigma_r = NaN(nt,nsb,nCh);
@@ -114,7 +124,7 @@ parfor i = 1:nd
 end
 
 % amplitude fields
-afields = {'A', 'A_pstd', 'sigma_r', 'SE_sigma_r', 'sbA', 'ebA', 'sbSigma_r', 'ebSigma_r'};
+afields = {'A', 'A_pstd', 'A_all', 'A_pstd_all', 'sigma_r', 'SE_sigma_r', 'sbA', 'ebA', 'sbSigma_r', 'ebSigma_r'};
 
 % apply amplitude correction
 acorr = ip.Results.AmplitudeCorrectionFactor;
@@ -142,7 +152,7 @@ end
 
 if isfield(lftData(1), 'significantMaster')
     vnames = [vnames 'significantMaster' 'significantSlave'];
-    fnames = [vnames mnames];
+    fnames = [vnames tznames mnames];
 end
 
 maxA = cell(nCh,nd);
@@ -152,38 +162,50 @@ for i = 1:nd
             maxA{c,i} = nanmax(lftData(i).A(:,:,c),[],2);
         end
     end
-    
+
     % apply frame cutoff to all fields
     if ~isempty(ip.Results.Cutoff_f)
         idx = lftData(i).trackLengths(lftData(i).catIdx==1)>=ip.Results.Cutoff_f;
         for f = 1:numel(mnames)
             lftData(i).(mnames{f}) = lftData(i).(mnames{f})(idx,:,:);
         end
-        
+
         idx = lftData(i).trackLengths>=ip.Results.Cutoff_f;
         for f = 1:numel(vnames)
             lftData(i).(vnames{f}) = lftData(i).(vnames{f})(idx,:);
         end
+
+        for f = 1:numel(vnames)
+            lftData(i).(tznames{f}) = lftData(i).(tznames{f})(idx);
+        end
     end
-    
+
     if ~ip.Results.ReturnValidOnly
         for f = 1:numel(vnames)
             lftData(i).([vnames{f} '_all']) = lftData(i).(vnames{f});
         end
     end
-    
+
     % remaining fields: retain category==1
     idx = lftData(i).catIdx==1;
     for f = 1:numel(vnames)
         lftData(i).(vnames{f}) = lftData(i).(vnames{f})(idx,:);
     end
-    
+
     % remove visitors
     if ip.Results.ExcludeVisitors && size(lftData(i).A,1) > 0
         vidx = getVisitorIndex(lftData(i));
-        for f = 1:numel(fnames)
-            lftData(i).visitors.(fnames{f}) = lftData(i).(fnames{f})(vidx{1},:,:);
-            lftData(i).(fnames{f}) = lftData(i).(fnames{f})(~vidx{1},:,:);
+        for f = 1:numel(vnames)
+            lftData(i).visitors.(vnames{f}) = lftData(i).(vnames{f})(vidx{1},:);
+            lftData(i).(vnames{f}) = lftData(i).(vnames{f})(~vidx{1},:);
+        end
+        for f = 1:numel(mnames)
+            lftData(i).visitors.(mnames{f}) = lftData(i).(mnames{f})(vidx{1},:,:);
+            lftData(i).(mnames{f}) = lftData(i).(mnames{f})(~vidx{1},:,:);
+        end
+        for f = 1:numel(tznames)
+            lftData(i).visitors.(tznames{f}) = lftData(i).(tznames{f}){vidx{1}};
+            lftData(i).(tznames{f}) = lftData(i).(tznames{f}){~vidx{1}};
         end
     end
 end
@@ -197,7 +219,7 @@ for c = 1:nCh
         [a, offset, refIdx] = scaleEDFs(maxA(c,:), 'Display', ip.Results.DisplayScaling,...
             'FigureName', ['Ch. ' num2str(c) ' max. intensity scaling'],...
             'Colormap', ip.Results.Colormap, 'Legend', getMovieName(data));
-        
+
         av(c,:) = a;
         movieLength = min([data.movieLength]);
         for i = 1:nd
@@ -210,7 +232,7 @@ for c = 1:nCh
             end
         end
     end
-    
+
     if ip.Results.RemoveOutliers && nd>5
         outlierIdx = detectEDFOutliers(maxA(c,:), offset, refIdx);
         if ~isempty(outlierIdx)

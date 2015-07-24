@@ -78,7 +78,7 @@ if ip.Results.Mask
     else
         mask = logical(getCellMask(data));
     end
-    
+
     nt = numel(tracks);
     x = NaN(1,nt);
     y = NaN(1,nt);
@@ -86,7 +86,7 @@ if ip.Results.Mask
         x(k) = round(nanmean(tracks(k).x(mCh,:)));
         y(k) = round(nanmean(tracks(k).y(mCh,:)));
     end
-    
+
     % remove tracks outside of mask
     [ny,nx] = size(mask);
     idx = sub2ind([ny nx], y, x);

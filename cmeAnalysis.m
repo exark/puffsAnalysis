@@ -72,7 +72,7 @@ ip.addParamValue('ControlData', [], @isstruct);
 ip.addParamValue('PlotAll', false, @islogical);
 ip.addParamValue('ChannelNames', []);
 ip.addParamValue('FirstNFrames', [], @isposint);
-ip.addParamValue('DisplayMode', 'screen', @(x) any(strcmpi(x, {'print', 'screen'})));
+ip.addParamValue('DisplayMode', 'print', @(x) any(strcmpi(x, {'print', 'screen'})));
 ip.addParamValue('MasterCh', 1, @(x) numel(x)==1);
 ip.parse(varargin{:});
 data = ip.Results.data;
