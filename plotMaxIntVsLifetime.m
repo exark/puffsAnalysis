@@ -38,7 +38,7 @@ ip.addParamValue('Legend', []);
 ip.addParamValue('Parent', []);
 ip.addParamValue('LifetimeData', 'LifetimeData.mat');
 ip.addParamValue('ProcessedTracks', 'ProcessedTracks.mat');
-ip.addParamValue('PlotIndividual', true, @islogical);
+ip.addParamValue('PlotIndividual', true, @islogical); %
 ip.addParamValue('NormX', true, @islogical);
 ip.addParamValue('FontSize', 10);
 ip.addParamValue('Width', 4, @isposint);

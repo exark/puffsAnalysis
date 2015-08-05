@@ -124,7 +124,7 @@ for i = 1:nd
 end
 
 % amplitude fields
-afields = {'A', 'A_pstd', 'A_all', 'A_pstd_all', 'sigma_r', 'SE_sigma_r', 'sbA', 'ebA', 'sbSigma_r', 'ebSigma_r'};
+afields = {'A', 'A_pstd','sigma_r', 'SE_sigma_r', 'sbA', 'ebA', 'sbSigma_r', 'ebSigma_r'};
 
 % apply amplitude correction
 acorr = ip.Results.AmplitudeCorrectionFactor;
@@ -175,7 +175,7 @@ for i = 1:nd
             lftData(i).(vnames{f}) = lftData(i).(vnames{f})(idx,:);
         end
 
-        for f = 1:numel(vnames)
+        for f = 1:numel(tznames)
             lftData(i).(tznames{f}) = lftData(i).(tznames{f})(idx);
         end
     end
@@ -205,7 +205,7 @@ for i = 1:nd
         end
         for f = 1:numel(tznames)
             lftData(i).visitors.(tznames{f}) = lftData(i).(tznames{f}){vidx{1}};
-            lftData(i).(tznames{f}) = lftData(i).(tznames{f}){~vidx{1}};
+            lftData(i).(tznames{f}) = lftData(i).(tznames{f})(~vidx{1});
         end
     end
 end

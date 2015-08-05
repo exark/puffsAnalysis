@@ -8,62 +8,93 @@ function intensityAnalysis(data, varargin)
 ip = inputParser;
 ip.CaseSensitive = false;
 ip.addRequired('data');
-%ip.addOptional('xl', []);
-%ip.addOptional('xa', []);
-ip.addParamValue('ExcludeVisitors', false, @islogical);
 ip.addParamValue('Cutoff_f', 1, @isscalar);
 ip.addParamValue('FirstNFrames', [], @isvector);
-ip.addParamValue('DisplayFunction', @sqrt);
-ip.addParamValue('Channel', 1, @isposint);
-ip.addParamValue('Legend', []);
-%ip.addParamValue('Parent', []);
 ip.addParamValue('LifetimeData', 'LifetimeData.mat');
-%ip.addParamValue('ProcessedTracks', 'ProcessedTracks.mat');
-ip.addParamValue('PlotIndividual', false, @islogical);
-ip.addParamValue('NormX', true, @islogical);
-ip.addParamValue('FontSize', 10);
-ip.addParamValue('Width', 4, @isposint);
+ip.addParamValue('ProcessedTracks', 'ProcessedTracks.mat');
 ip.addParamValue('AmplitudeCorrection', []);
-ip.addParamValue('allInt',[]); 
-ip.addParamValue('allCat',[]);
-ip.addParamValue('allLT',[]);
+ip.addParamValue('PlotAllCat',false, @islogical); %(TP) new addition
 ip.parse(data, varargin{:});
 
-% (TP)  taken from plotMaxIntVsLifetime
-if ip.Results.PlotIndividual
-    lftData = getLifetimeData(data, 'Overwrite', false, 'Mask', true,...
-        'ProcessedTracks', ip.Results.ProcessedTracks, 'LifetimeData', ip.Results.LifetimeData,...
-        'ReturnValidOnly', false, 'AmplitudeCorrectionFactor', ip.Results.AmplitudeCorrection);
-    data = arrayfun(@(i) i, data, 'unif', 0);
-    lftData = arrayfun(@(i) i, lftData, 'unif', 0);
-    nd = numel(data); %(TP) with data as an array, nd = number of cells
-    
-else
-    if ~iscell(data)
-        data = {data};
-    end
-    nd = numel(data); %(TP) with data as a cell, all info is put into 1 cell, -> nd always = 1
-    lftData = cell(1,nd);
-    for i = 1:nd
-        lftData{i} = getLifetimeData(data{i}, 'Overwrite', false, 'Mask', true,...
-            'ProcessedTracks', ip.Results.ProcessedTracks, 'LifetimeData', ip.Results.LifetimeData,...
-            'ReturnValidOnly', false, 'AmplitudeCorrectionFactor', ip.Results.AmplitudeCorrection);
+% (TP) for a single cell at a time
+load([data.source 'Analysis' filesep 'LifetimeData.mat']);%opts.LifetimeData]);
+nt = numel(A_all); %(TP) number of tracks
+
+for t = 1:nt %for every track
+    if ~isempty(ip.Results.FirstNFrames)
+        tmp = nanmean(A_all{t}(ip.Results.Cutoff_f:ip.Results.FirstNFrames));
+    else
+        tmp = nanmean(A_all{t}(ip.Results.Cutoff_f:end)); 
+    meanA_all(t) = tmp;
     end
 end
-% taken from plotMaxVsLifetime
 
-parfor i = 1:length(data) %numcells
-  %load([data(i).source 'Tracking' filesep 'ProcessedTracks.mat']);
-  %load([data(i).source 'Analysis' filesep 'LifetimeData.mat']);
-  LifetimeData = load('LifetimeData.mat')
+if ip.Results.PlotAllCat
+    categories = []
+    for c = 1:8
+        if numel(find(catIdx == c)) ~= 0
+            categories = [categories,c]
+        end 
+    end 
+else 
+   categories = [1,2,5];
+end 
 
-  for t = 1:numel(data(i)) %numtracks
-    int = LifetimeData(t).A_all
-    cat = LifetimeData(t).catIdx
-    lt = LifetimeData(t).lifetime_s
-    meanIntensity = nanmean(int)
-    allInt(i,t) = meanIntensity 
-    allCat(i,t) = cat 
-    allLT(i,t) = lt
-  end
-end
+legendStr = {}
+for c = 1:numel(categories)
+% if numel(find(catIdx == categories(c))) ~= 0
+ hold on;
+ scatter(lifetime_s(catIdx == categories(c)),meanA_all(catIdx == categories(c)));
+ legendStr = [legendStr, {num2str(categories(c))}]
+end 
+legend(legendStr);
+
+% (TP) Everything from HERE DOWN is for numerous cells at a time. In
+% progress. Need to figure out why all catIdx is 1 in lftData.
+
+% nd = numel(data); %(TP) nd = number of cells in data
+% %lftData = cell(1,nd);
+% if ~iscell(data)
+%     data = {data};
+% end 
+% 
+% %(TP) each cell in lftData contains all the lifetime data for one cell
+% for i = 1:nd
+%     [lftData{i},~] = getLifetimeData(data{i}, 'Overwrite', false, 'Mask', true,...
+%         'ProcessedTracks', ip.Results.ProcessedTracks, 'LifetimeData', ip.Results.LifetimeData,...
+%         'ReturnValidOnly', false, 'AmplitudeCorrectionFactor', ip.Results.AmplitudeCorrection);
+% end
+% 
+% meanA_all = cell(nd,1);
+% 
+% for i = 1:nd %(TP)for every cell
+%     nt = numel(lftData{i}.A_all); %(TP) number of track
+%     for t = 1:nt %for every track
+%         if ~isempty(ip.Results.FirstNFrames)
+%             tmp = nanmean([lftData{i}.A_all{t,ip.Results.Cutoff_f:ip.Results.FirstNFrames,1}]);
+%         else
+%             tmp = nanmean([lftData{i}.A_all{t,ip.Results.Cutoff_f:end,1}]); 
+%         meanA_all{i}{t} = tmp;
+%         end
+%     end
+% end
+% 
+% for i = 1:nd 
+%     if ip.Results.PlotAllCat
+%         catFilter = [find(lftData{i}.catIdx_all == 1)' find(lftData{i}.catIdx_all == 2)'...
+%             find(lftData{i}.catIdx_all == 3)' find(lftData{i}.catIdx_all == 4)'...
+%             find(lftData{i}.catIdx_all == 5)' find(lftData{i}.catIdx_all == 6)'...
+%             find(lftData{i}.catIdx_all == 7)' find(lftData{i}.catIdx_all == 8)']';
+%         categories = [1:8];
+%     else 
+%         catFilter = [find(lftData{i}.catIdx_all == 1)' find(lftData{i}.catIdx_all == 2)'...
+%             find(lftData{i}.catIdx_all == 5)']';
+%         categories = [1,2,5];
+%     legendStr = (num2str(categories','Category %-d'));
+%     scatter(lftData{i}.lifetime_s(catFilter),(meanA_all(1))(catFilter));
+%     legend(legendStr);
+%     end 
+% end 
+
+
+   
