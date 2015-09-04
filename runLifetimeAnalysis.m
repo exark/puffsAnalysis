@@ -26,7 +26,7 @@ ip.addParamValue('LifetimeData', 'lifetimeData.mat', @ischar);
 ip.addParamValue('Type', 'all', @ischar);
 ip.addParamValue('Cutoff_f', 5, @isscalar);
 ip.addParamValue('Print', false, @islogical);
-ip.addParamValue('Buffer', 5);
+ip.addParamValue('Buffer', 1);
 ip.addParamValue('MaxIntensityThreshold', []);
 ip.addParamValue('Overwrite', false, @islogical);
 ip.addParamValue('ClassificationSelector', 'significantMaster');
@@ -133,12 +133,18 @@ for i = 1:nd
     lftHist_Ia =  [hist(lftData(i).lifetime_s_all(idx_Ia), t).*w  pad0];
     lftHist_Ib =  [hist(lftData(i).lifetime_s_all(idx_Ib), t).*w  pad0];
     lftHist_IIa = [hist(lftData(i).lifetime_s_all(idx_IIa), t).*w pad0];
+    lftHist_total = [hist(lftData(i).lifetime_s_all(idx_Ia | idx_Ib | idx_IIa), t).*w pad0];
 
     % Normalization
     lftRes.lftHist_Ia(i,:) = lftHist_Ia / sum(lftHist_Ia) / framerate;
     lftRes.lftHist_Ib(i,:) = lftHist_Ib / sum(lftHist_Ib) / framerate;
     lftRes.lftHist_IIa(i,:) = lftHist_IIa / sum(lftHist_IIa) / framerate;
+    lftRes.lftHist_total(i,:) = lftHist_total;
     lftRes.nSamples_Ia(i) = sum(idx_Ia);
+    lftRes.nSamples_Ib(i) = sum(idx_Ib);
+    lftRes.nSamples_IIa(i) = sum(idx_IIa);
+    lftRes.nSamples_total(i) = sum([idx_Ia' idx_Ib' idx_IIa']);
+
 
     %-------------------------------------------------------------
     % Max. intensity distribution for cat. Ia CCP tracks
@@ -182,7 +188,7 @@ if isempty(ip.Results.MaxIntensityThreshold)
             sC = zeros(1,nc);
             for c = 1:nc
                 cidx = lb(c)<=lft & lft<=ub(c);
-                if (numel(find(cidx~=0)>0))
+                if (numel(find(cidx~=0))>1)
                     [muC(c), sC(c)] = fitGaussianModeToCDF(M(cidx,:));
                 else
                     continue
