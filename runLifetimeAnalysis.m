@@ -231,7 +231,7 @@ for i = 1:nd
     end
 
     % 2) Remove non-endocytic structures (i.e., endosomal CCSs)
-    if ip.Results.ExcludeVisitors
+    if ip.Results.ExcludeVisitors && ~isempty(lftData(i).visitors)
         res(i).lftVisitors = lftData(i).visitors.lifetime_s;
         nCS = numel(lftData(i).lifetime_s) + numel(lftData(i).visitors.lifetime_s);
         lftRes.pctVisit(i) = numel(res(i).lftVisitors) / nCS;
@@ -271,7 +271,7 @@ for i = 1:nd
     lftRes.lftHistCCP_counts(i,:) = [hist(res(i).lftAboveT, t) pad0];
     lftRes.lftHistCS_counts(i,:) = [hist(res(i).lftBelowT, t) pad0];
 
-    if ip.Results.ExcludeVisitors
+    if ip.Results.ExcludeVisitors && ~isempty(lftData(i).visitors)
         lftHistVisit = [hist(res(i).lftVisitors, t).*w pad0];
         lftRes.lftHistVisit(i,:) = lftHistVisit / sum(lftHistVisit) / framerate;
     end
