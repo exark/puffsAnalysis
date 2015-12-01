@@ -19,7 +19,7 @@ ip.CaseSensitive = false;
 ip.addRequired('data', @isstruct);
 ip.addOptional('ch', nCh:-1:1);
 ip.addParamValue('Overwrite', false, @islogical);
-ip.addParamValue('CohortBounds_s', [50 100 150 200 300 400 1000]);
+ip.addParamValue('CohortBounds_s', [10 20 40 60 80 100 120]);
 ip.addParamValue('ShowVariation', true, @islogical);
 ip.addParamValue('FillMode', 'SEM', @(x) any(strcmpi(x, {'SEM', 'pct'})));
 ip.addParamValue('FrontLayer', false, @islogical);
@@ -99,10 +99,10 @@ end
 res(1:nd) = struct('interpTracks', [], 'interpSigLevel', []);
 cohortBounds(end) = cohortBounds(end)+framerate;
 for i = 1:nd
-
+    
     % for intensity threshold in master channel
     maxA = max(lftData(i).A(:,:,mCh), [], 2);
-
+    
     for ch = 1:nCh % channels
         % interpolate tracks to mean cohort length
         for c = 1:nc % cohorts
@@ -124,7 +124,7 @@ for i = 1:nd
                     %w = min(numel(A),iLength);
                     %interpTracks(t,1:w) = A(1:w);
                     %sigma_r_Ia(t,1:w) = bgr(1:w);
-
+                    
                     % interpolate to mean length
                     xi = linspace(1,cLengths(t)+2*b, iLength(c));
                     %interpTracks(t,:) = interp1(1:cLengths(t)+2*b, A, xi, 'cubic');
@@ -132,7 +132,7 @@ for i = 1:nd
                     %sigma_rMat(t,:) = interp1(1:cLengths(t)+2*b, bgr, xi, 'cubic');
                     sigma_rMat(t,:) = binterp(bgr, xi);
                 end
-
+                
                 res(i).interpTracks{ch,c} = interpTracks;
                 res(i).interpSigLevel{ch,c} = kLevel*sigma_rMat;
                 % split as a function of slave channel signal
@@ -167,7 +167,7 @@ if nCh==1
     v = mod(hues(1)+linspace(-0.1, 0.1, nc)', 1);
     cmap{1} = hsv2rgb([v ones(nc,1) 0.9*ones(nc,1)]);
     cv{1} = hsv2rgb([v 0.4*ones(nc,1) ones(nc,1)]);
-
+    
     % Jet colormap
     %cmap{1} = jet(nc);
     %cv{1} = rgb2hsv(cmap{1});
@@ -223,7 +223,7 @@ switch nCh
         na = 2;
         ah = 1;
         sigCombIdx = [1 0]';
-
+        
         pct = zeros(nd,2);
         for i = 1:nd
             vidx = max(lftData(i).A(:,:,mCh),[],2) > ip.Results.MaxIntensityThreshold;
@@ -238,7 +238,7 @@ switch nCh
         na = 4;
         ah = 2;
         sigCombIdx = [1 1; 1 0; 0 1; 0 0];
-
+        
         pct = zeros(nd,4);
         for i = 1:nd
             vidx = max(lftData(i).A(:,:,mCh),[],2) > ip.Results.MaxIntensityThreshold;
@@ -261,12 +261,12 @@ if ~isempty(sigCombIdx)
     switch nCh
         case 2
             for a = 1:na
-                atext{a} = [tmp(a,1) SlaveName{1} ': ' num2str(meanPct(a)*100, '%.1f') 'ï¿½' num2str(stdPct(a)*100, '%.1f') '%'];
+                atext{a} = [tmp(a,1) SlaveName{1} ': ' num2str(meanPct(a)*100, '%.1f') '±' num2str(stdPct(a)*100, '%.1f') '%'];
             end
         case 3
             for a = 1:na
                 atext{a} = [SlaveName{1} tmp(a,1) ' / ' SlaveName{2} tmp(a,2) ': '...
-                    num2str(meanPct(a)*100, '%.1f') 'ï¿½' num2str(stdPct(a)*100, '%.1f') '%'];
+                    num2str(meanPct(a)*100, '%.1f') '±' num2str(stdPct(a)*100, '%.1f') '%'];
             end
     end
 end
@@ -303,7 +303,7 @@ for a = 1:na
             end
         end
     end
-
+    
     for c = nc:-1:1
         for ch = chVec; % plot master channel last
             if nd > 1
@@ -341,7 +341,7 @@ for a = 1:na
             cohorts(a).A{ch,c} = A{ch,c};
         end
     end
-
+    
     for ch = chVec
         % Plot mean/median in front
         if ip.Results.FrontLayer
@@ -349,7 +349,7 @@ for a = 1:na
                 plot(ha(a), cT{c}, sf(ch)*A{ch,c}, ip.Results.LineStyle, 'Color', cmap{ch}(c,:), 'LineWidth', 1);
             end
         end
-
+        
         % Plot signifcance threshold in front
         if ip.Results.ShowBackground && ch~=mCh
             % Background level: median of all detections
@@ -389,21 +389,21 @@ if ip.Results.ShowPct && nCh>2
         'Parent', hav, 'Font', fset.sfont);
     axis off;
 end
-
-
+    
+   
 %     if ip.Results.ShowLegend
 %         cohortLabels = arrayfun(@(i) [' ' num2str(cohortBounds(i)) '-' num2str(cohortBounds(i+1)-framerate) ' s'], 1:nc, 'unif', 0);
 %         hl = legend(hp, [cohortLabels cohortLabels], 'Location', 'SouthEast');
 %         set(hl, 'Box', 'off', fset.tfont{:}, 'Position', [6.75+7.65 1.5 1.25 3.5]);
 %     end
-
+    
 %     if ip.Results.ShowPct
 %         axes(fset.axOpts{:}, 'Position', [15.5 2 3 2.5], 'TickLength', fset.TickLength*6/3);
 %         barplot2(mean(M,1)', std(M,[],1)', 'Angle', 0, 'BarWidth', 1, 'GroupDistance', 1,...
 %             'FaceColor', 0.8*[1 1 1], 'EdgeColor', 0.4*[1 1 1],...
 %             'YLim', [0 100], 'LineWidth', 1);
 %         set(gca, 'FontSize', 8);
-%
+%         
 %         h = title(['% ' ip.Results.SlaveName ' pos. CCPs'], fset.sfont{:});
 %         %h = ylabel('% CCPs/cohort', fset.lfont{:});
 %         pos = get(h, 'Position');
@@ -439,7 +439,7 @@ end
 if ip.Results.ShowStats
     % tracks in each data set
     % arrayfun(@(i) sum(i.maxA(:,1)>ip.Results.MaxIntensityThreshold), lftData);
-
+    
     % plot total tracks in each cohort
     for a = 1:na
         for c = 1:nc
@@ -461,3 +461,5 @@ end
 %     rotateXTickLabels(ha(1), 'AdjustFigure', false);
 %     xlabel(ha(1), 'Lifetime cohort', fset.lfont{:});
 % end
+
+

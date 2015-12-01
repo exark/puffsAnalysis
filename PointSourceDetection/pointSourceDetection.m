@@ -58,13 +58,13 @@ end
 % Gaussian kernel
 w = ceil(4*sigma);
 x = -w:w;
-g = exp(-x.^2/(2*sigma^2)); %(TP)equation used to estimate microscope PSF
-u = ones(1,length(x)); %(TP)summation filter defined over spacial support of minimization
+g = exp(-x.^2/(2*sigma^2));
+u = ones(1,length(x));
 
 % convolutions
 imgXT = padarrayXT(img, [w w], 'symmetric');
-fg = conv2(g', g, imgXT, 'valid'); %convolution of each frame by g
-fu = conv2(u', u, imgXT, 'valid'); % "" by u
+fg = conv2(g', g, imgXT, 'valid');
+fu = conv2(u', u, imgXT, 'valid');
 fu2 = conv2(u', u, imgXT.^2, 'valid');
 
 % Laplacian of Gaussian
@@ -79,8 +79,6 @@ gsum = sum(g(:));
 g2sum = sum(g(:).^2);
 
 % solution to linear system
-%(TP) uses individual convoluted images and kernels to estimate A and c for
-%each pixel to create a pixel-level mask of significant signal positions
 A_est = (fg - gsum*fu/n) / (g2sum - gsum^2/n);
 c_est = (fu - A_est*gsum)/n;
 

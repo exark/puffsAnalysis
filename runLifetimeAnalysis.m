@@ -17,16 +17,16 @@ function [lftRes, res] = runLifetimeAnalysis(data, varargin)
 ip = inputParser;
 ip.CaseSensitive = false;
 ip.addRequired('data', @(x) isstruct(x) && numel(unique([data.framerate]))==1);
-ip.addOptional('lb', [1  51 101 151 201 301 401]);
-ip.addOptional('ub', [50 100 150 200 300 400 1000]);
+ip.addOptional('lb', [1  11 16 21 41 61]);
+ip.addOptional('ub', [10 15 20 40 60 120]);
 ip.addParamValue('Display', 'on', @(x) any(strcmpi(x, {'on', 'off', 'all'})));
 ip.addParamValue('DisplayMode', 'print', @(x) any(strcmpi(x, {'print', 'screen'})));
 ip.addParamValue('ProcessedTracks', 'ProcessedTracks.mat', @ischar);
 ip.addParamValue('LifetimeData', 'lifetimeData.mat', @ischar);
-ip.addParamValue('Type', 'all', @ischar);
+ip.addParameter('Type', 'all', @ischar);
 ip.addParamValue('Cutoff_f', 5, @isscalar);
 ip.addParamValue('Print', false, @islogical);
-ip.addParamValue('Buffer', 1);
+ip.addParamValue('Buffer', 5);
 ip.addParamValue('MaxIntensityThreshold', []);
 ip.addParamValue('Overwrite', false, @islogical);
 ip.addParamValue('ClassificationSelector', 'significantMaster');
@@ -74,9 +74,7 @@ firstN = 3:20;
 % loop through data sets, load tracks, store max. intensities and lifetimes
 res = struct([]);
 
-%(ZW) overwrite set for debug, replace with ip.Results.Overwrite
-
-[lftData, outlierIdx] = getLifetimeData(data, 'Overwrite', true,...
+[lftData, outlierIdx] = getLifetimeData(data, 'Overwrite', ip.Results.Overwrite,...
     'ReturnValidOnly', false, 'ExcludeVisitors', ip.Results.ExcludeVisitors, 'Cutoff_f', cutoff_f,...
     'Scale', ip.Results.Rescale, 'DisplayScaling', any(strcmpi(ip.Results.Display, {'on','all'})),...
     'RemoveOutliers', ip.Results.RemoveOutliers, 'Mask', true, 'Colormap', ip.Results.Colormap, ...
@@ -89,7 +87,7 @@ cmap(outlierIdx,:) = [];
 
 
 if ip.Results.PoolDatasets
-    pnames = {'lifetime_s', 'start', 'catIdx', 'A', 'lifetime_s_all', 'start_all', 'catIdx_all', 'c'};% (TP) added c
+    pnames = {'lifetime_s', 'start', 'catIdx', 'A', 'lifetime_s_all', 'start_all', 'catIdx_all'};
     if isfield(lftData, 'significantMaster')
         pnames = [pnames 'significantMaster'];
     end
@@ -101,7 +99,6 @@ if ip.Results.PoolDatasets
     tmp.a = 1;
     lftData = tmp;
 end
-
 fprintf('=============================================================================\n');
 fprintf('Lifetime analysis - processing:   0%%');
 nd = numel(lftData);
@@ -113,12 +110,7 @@ for i = 1:nd
     % Category statistics
     idx_Ia = [lftData(i).catIdx_all]==1;
     idx_Ib = [lftData(i).catIdx_all]==2;
-    idx_Ic = [lftData(i).catIdx_all]==3;
-    idx_Id = [lftData(i).catIdx_all]==4;
     idx_IIa = [lftData(i).catIdx_all]==5;
-    idx_IIb = [lftData(i).catIdx_all]==6;
-    idx_IIc = [lftData(i).catIdx_all]==7;
-    idx_IId = [lftData(i).catIdx_all]==8;
 
     % raw histograms
     N = data(i).movieLength-2*buffer;
@@ -138,18 +130,12 @@ for i = 1:nd
     lftHist_Ia =  [hist(lftData(i).lifetime_s_all(idx_Ia), t).*w  pad0];
     lftHist_Ib =  [hist(lftData(i).lifetime_s_all(idx_Ib), t).*w  pad0];
     lftHist_IIa = [hist(lftData(i).lifetime_s_all(idx_IIa), t).*w pad0];
-    lftHist_total = [hist(lftData(i).lifetime_s_all(idx_Ia | idx_IIa), t).*w pad0];
 
     % Normalization
     lftRes.lftHist_Ia(i,:) = lftHist_Ia / sum(lftHist_Ia) / framerate;
     lftRes.lftHist_Ib(i,:) = lftHist_Ib / sum(lftHist_Ib) / framerate;
     lftRes.lftHist_IIa(i,:) = lftHist_IIa / sum(lftHist_IIa) / framerate;
-    lftRes.lftHist_total(i,:) = lftHist_total;
     lftRes.nSamples_Ia(i) = sum(idx_Ia);
-    lftRes.nSamples_Ib(i) = sum(idx_Ib);
-    lftRes.nSamples_IIa(i) = sum(idx_IIa);
-    lftRes.nSamples_total(i) = sum([idx_Ia' idx_Ib' idx_IIa']);
-
 
     %-------------------------------------------------------------
     % Max. intensity distribution for cat. Ia CCP tracks
@@ -193,7 +179,7 @@ if isempty(ip.Results.MaxIntensityThreshold)
             sC = zeros(1,nc);
             for c = 1:nc
                 cidx = lb(c)<=lft & lft<=ub(c);
-                if (numel(find(cidx~=0))>1)
+                if (numel(find(cidx~=0)>0))
                     [muC(c), sC(c)] = fitGaussianModeToCDF(M(cidx,:));
                 else
                     continue
@@ -275,6 +261,7 @@ for i = 1:nd
     % Raw, unweighted histograms with counts/bin
     lftRes.lftHistCCP_counts(i,:) = [hist(res(i).lftAboveT, t) pad0];
     lftRes.lftHistCS_counts(i,:) = [hist(res(i).lftBelowT, t) pad0];
+
 
     if ip.Results.ExcludeVisitors && ~isempty(lftData(i).visitors)
         lftHistVisit = [hist(res(i).lftVisitors, t).*w pad0];

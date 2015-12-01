@@ -124,9 +124,7 @@ for i = 1:nd
 end
 
 % amplitude fields
-
-afields = {'A', 'A_pstd', 'sigma_r', 'SE_sigma_r', 'sbA', 'ebA', 'sbSigma_r', 'ebSigma_r'};
-
+afields = {'A', 'A_pstd','sigma_r', 'SE_sigma_r', 'sbA', 'ebA', 'sbSigma_r', 'ebSigma_r'};
 
 % apply amplitude correction
 acorr = ip.Results.AmplitudeCorrectionFactor;

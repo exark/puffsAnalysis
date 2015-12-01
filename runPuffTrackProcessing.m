@@ -28,16 +28,17 @@ function runTrackProcessing(data, varargin)
 ip = inputParser;
 ip.CaseSensitive = false;
 ip.addRequired('data', @isstruct);
-ip.addParamValue('Buffer', [5 5], @(x) numel(x)==2);
+%ip.addParamValue('Buffer', [5 5], @(x) numel(x)==2)
+ip.addParamValue('Buffer', [3 3], @(x) numel(x)==2); %(TP***): Changed buffer to 1 to account for shorter puff lengths 
 ip.addParamValue('BufferAll', false, @islogical);
 ip.addParamValue('Overwrite', false, @islogical);
 ip.addParamValue('TrackerOutput', 'trackedFeatures.mat', @ischar);
 ip.addParamValue('FileName', 'ProcessedTracks.mat', @ischar);
-ip.addParamValue('DetectionFile', 'detection_v2.mat', @ischar);
+ip.addParameter('DetectionFile', 'detection_v2.mat', @ischar);
 ip.addParamValue('Frames', arrayfun(@(x) 1:x.movieLength, data, 'UniformOutput', false), @(x) numel(unique(diff(x)))==1); %check that frame rate is constant
 ip.addParamValue('Preprocess', true, @islogical);
 ip.addParamValue('Postprocess', true, @islogical);
-ip.addParamValue('CohortBounds_s', [10 20 40 60 80 100 125 150 200 250 300 350 400 450 500]); % used in post-proc
+ip.addParameter('CohortBounds_s', [50 100 150 200 250 300 350 400 500 1000]); % used in post-proc
 ip.addParamValue('ForceDiffractionLimited', true, @islogical);
 ip.parse(data, varargin{:});
 overwrite = ip.Results.Overwrite;
@@ -45,8 +46,8 @@ frameIdx = ip.Results.Frames;
 if ~iscell(frameIdx)
     frameIdx = {frameIdx};
 end
-
-parfor i = 1:length(data)
+%parfor i = 1:length(data)
+for i = 1:length(data) %(TP***): change back to parfor
     if ~(exist([data(i).source filesep 'Tracking' filesep ip.Results.FileName],'file')==2) || overwrite %#ok<PFBNS>
         data(i) = main(data(i), frameIdx{i}, ip.Results);
     else
@@ -413,13 +414,13 @@ nTracks = numel(tracks);
 fprintf('Processing tracks (%s) - classification:     ', getShortPath(data));
 for k = 1:nTracks
 
-    % gap locations in 'x' for all segments
+    %gap locations in 'x' for all segments
     gapVect = isnan(tracks(k).x(mCh,:)) & ~isnan(tracks(k).t);
     tracks(k).gapVect = gapVect;
 
-    %=================================
-    % Determine track and gap status
-    %=================================
+%     =================================
+%     Determine track and gap status
+%     =================================
     sepIdx = isnan(tracks(k).t);
 
     gapCombIdx = diff(gapVect | sepIdx);
@@ -432,12 +433,12 @@ for k = 1:nTracks
     segmentEnds = find(segmentIdx==-1)-1;
     segmentLengths = segmentEnds-segmentStarts+1;
 
-    % loop over gaps
+%     loop over gaps
     nGaps = numel(gapLengths);
     if nGaps>0
         gv = 1:nGaps;
         gapStatus = 5*ones(1,nGaps);
-        % gap valid if segments that precede/follow are > 1 frame or if gap is a single frame
+%         gap valid if segments that precede/follow are > 1 frame or if gap is a single frame
         gapStatus(segmentLengths(gv)>1 & segmentLengths(gv+1)>1 | gapLengths(gv)==1) = 4;
 
         sepIdx = sepIdx(gapStarts)==1;
@@ -446,7 +447,7 @@ for k = 1:nTracks
         gapEnds(sepIdx) = [];
         nGaps = numel(gapStatus);
 
-        % fill position information for valid gaps using linear interpolation
+%         fill position information for valid gaps using linear interpolation
         for g = 1:nGaps
             borderIdx = [gapStarts(g)-1 gapEnds(g)+1];
             gacombIdx = gapStarts(g):gapEnds(g);
@@ -669,6 +670,7 @@ if postprocess
     % Conditions:
     % - the amplitude in at least 2 consecutive frames must be within background in each buffer
     % - the maximum buffer amplitude must be smaller than the maximum track amplitude
+
     Tbuffer = 2;
 
     % loop through cat. Ia tracks
@@ -701,8 +703,8 @@ if postprocess
     %----------------------------------------------------------------------------
     % VI. Cut tracks with sequential events (hotspots) into individual tracks
     %----------------------------------------------------------------------------
-    splitCand = find([tracks.catIdx]==1 & arrayfun(@(i) ~isempty(i.gapIdx), tracks) & trackLengths>4);
-
+    %splitCand = find([tracks.catIdx]==1 & arrayfun(@(i) ~isempty(i.gapIdx), tracks) & trackLengths>4);
+    splitCand = find([tracks.catIdx]==1 & arrayfun(@(i) ~isempty(i.gapIdx), tracks) & trackLengths>2); %(TP***) at least 0.2s/puff 
     % Loop through tracks and test whether gaps are at background intensity
     rmIdx = []; % tracks to remove from list after splitting
     newTracks = [];
@@ -727,8 +729,9 @@ if postprocess
         gapIdx = gapIdx(splitIdx==1);
 
         % new segments must be at least 5 frames
-        delta = diff([1 gapIdx trackLengths(k)]);
-        gapIdx(delta(1:end-1)<5 | delta(2:end)<5) = [];
+        delta = diff([1 gapIdx trackLengths(k)]); % (TP) gives the number of frames of segment from start of track to gap and segment from gap to end of track
+        %gapIdx(delta(1:end-1)<5 | delta(2:end)<5) = [];
+        gapIdx(delta(1:end-1)<2 | delta(2:end)<2) = []; % (TP***): new segs need to be at least 0.2s
 
         ng = numel(gapIdx);
         splitIdx = zeros(1,ng);
@@ -808,10 +811,19 @@ if postprocess
     p95 = prctile(medianDist, 95);
     for i = 1:nt
         if sum(dists{i}>p95)>4 && tracks(i).catIdx==1
+        %if sum(dists{i}>p95)>1 && tracks(i).catIdx==1 %(TP***): remove tracks >1 frame-frame displacement
             tracks(i).catIdx = 2;
         end
     end
 
+
+%(TP***) assign category 6 to all category 1 tracks with gaps
+idx_Ia = find([tracks.catIdx]==1);
+for k = 1:numel(idx_Ia)
+ if ~isempty(tracks(idx_Ia(k)).gapIdx)
+     tracks(idx_Ia(k)).catIdx = 6
+ end
+end 
 
     %==========================================
     % Compute displacement statistics

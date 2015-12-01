@@ -63,8 +63,6 @@ function [res, data] = cmeAnalysis(varargin)
 ip = inputParser;
 ip.CaseSensitive = false;
 ip.addOptional('data', [], @isstruct);
-ip.addOptional('lb', [1  51 101 151 201 301 401]);
-ip.addOptional('ub', [50 100 150 200 300 400 1000]);
 ip.addParamValue('Overwrite', false, @islogical);
 ip.addParamValue('GaussianPSF', 'model', @(x) any(strcmpi(x, {'data', 'model'})));
 ip.addParamValue('TrackingRadius', [3 6], @(x) numel(x)==2);
@@ -74,12 +72,10 @@ ip.addParamValue('ControlData', [], @isstruct);
 ip.addParamValue('PlotAll', false, @islogical);
 ip.addParamValue('ChannelNames', []);
 ip.addParamValue('FirstNFrames', [], @isposint);
-ip.addParamValue('DisplayMode', 'print', @(x) any(strcmpi(x, {'print', 'screen'})));
+ip.addParamValue('DisplayMode', 'screen', @(x) any(strcmpi(x, {'print', 'screen'})));
 ip.addParamValue('MasterCh', 1, @(x) numel(x)==1);
 ip.parse(varargin{:});
 data = ip.Results.data;
-lb = ip.Results.lb;
-ub = ip.Results.lb;
 
 if isempty(data)
     parameters = ip.Results.Parameters;
@@ -103,15 +99,16 @@ cmap = plotPSNRDistribution(data, 'Pool', false, 'Channel', ip.Results.MasterCh)
 %-------------------------------------------------------------------------------
 % 2) Tracking
 %-------------------------------------------------------------------------------
-settings = loadTrackSettings('Radius', ip.Results.TrackingRadius, 'MaxGapLength', ip.Results.TrackingGapLength);
-runTracking(data, settings, opts{:});
+%settings = loadTrackSettings('Radius', ip.Results.TrackingRadius, 'MaxGapLength', ip.Results.TrackingGapLength);
+settings = loadTrackSettings(); %(TP)***
+runTracking(data, settings, opts{:}, 'Overwrite', true);
 
 %-------------------------------------------------------------------------------
 % 3) Track processing
 %-------------------------------------------------------------------------------
-runTrackProcessing(data, opts{:},'Overwrite',true);
+runPuffTrackProcessing(data, opts{:}, 'Overwrite', true);
 if numel(data(1).channels)>1
-    runSlaveChannelClassification(data, opts{:}, 'np', 5000, 'MasterCh', ip.Results.MasterCh,'Overwrite',false);
+    runSlaveChannelClassification(data, opts{:}, 'np', 5000, 'MasterCh', ip.Results.MasterCh,'Overwrite',true);
 end
 
 %-------------------------------------------------------------------------------
@@ -128,9 +125,9 @@ else
     display = 'off';
 end
 lopts = {'Display', display, 'RemoveOutliers', false, 'Colormap', cmap, 'DisplayMode', ip.Results.DisplayMode,...
-    'SlaveNames', chNames(2:end), 'FirstNFrames', ip.Results.FirstNFrames, 'Overwrite', true}; %(TP) changed to true
+    'SlaveNames', chNames(2:end), 'FirstNFrames', ip.Results.FirstNFrames, 'Overwrite', ip.Results.Overwrite};
 if isempty(ip.Results.ControlData)
-    res.lftRes = runLifetimeAnalysis(data, lopts{:});
+    res.lftRes = runLifetimeAnalysis(data, lopts{:}, 'Overwrite', false);
 else
     res.lftRes = runLifetimeAnalysis(data, lopts{:},...
         'MaxIntensityThreshold', ip.Results.ControlData.lftRes.MaxIntensityThreshold);
@@ -142,6 +139,6 @@ end
         'SlaveNames', chNames(2:end));
 %end
 
-% res.cohorts = plotIntensityCohorts(data, 'MaxIntensityThreshold', res.lftRes.MaxIntensityThreshold,...
-%    'ShowBackground', false, 'DisplayMode', 'screen', 'ScaleSlaveChannel', false,...
-%    'ShowLegend', false, 'ShowPct', false, 'SlaveName', chNames(2:end), 'CohortBounds_s', ub);
+res.cohorts = plotIntensityCohorts(data, 'MaxIntensityThreshold', res.lftRes.MaxIntensityThreshold,...
+    'ShowBackground', false, 'DisplayMode', 'screen', 'ScaleSlaveChannel', false,...
+    'ShowLegend', false, 'ShowPct', false, 'SlaveName', chNames(2:end));

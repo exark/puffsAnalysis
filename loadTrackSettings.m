@@ -7,9 +7,11 @@ function trackSettings = loadTrackSettings(varargin)
 ip = inputParser;
 ip.CaseSensitive = false;
 ip.addParamValue('Radius', []);
-ip.addParamValue('GapRadius', [5 10]);
+%ip.addParamValue('GapRadius', [5 10]);
+ip.addParamValue('GapRadius', [1 2]); %(TP)***
 ip.addParamValue('LinkRadius', [5 10]);
-ip.addParamValue('MaxGapLength', 2);
+%ip.addParamValue('MaxGapLength', 2);
+ip.addParamValue('MaxGapLength', 0); %(TP)***
 ip.parse(varargin{:});
 
 gapRadius = ip.Results.GapRadius;
@@ -20,7 +22,8 @@ if ~isempty(ip.Results.Radius)
 end
 
 gapCloseParam.timeWindow = ip.Results.MaxGapLength+1;  % maximum allowed time gap (in frames) between a track segment end and a track segment start that allows linking them.
-gapCloseParam.mergeSplit = 1;  % 1 if merging and splitting are to be considered, 2 if only merging is to be considered, 3 if only splitting is to be considered, 0 if no merging or splitting are to be considered.
+%gapCloseParam.mergeSplit = 1;  % 1 if merging and splitting are to be considered, 2 if only merging is to be considered, 3 if only splitting is to be considered, 0 if no merging or splitting are to be considered.
+gapCloseParam.mergeSplit = 3 %(TP)***
 gapCloseParam.minTrackLen = 1; % minimum length of track segments from linking to be used in gap closing.
 gapCloseParam.diagnostics = 0; % 1 to plot a histogram of gap lengths in the end; 0 or empty otherwise.
 
@@ -59,7 +62,8 @@ costMatrices(2).parameters.timeReachConfL = gapCloseParam.timeWindow; %same as t
 costMatrices(2).parameters.maxAngleVV = 45; %maximum angle between the directions of motion of two tracks that allows linking them (and thus closing a gap). Think of it as the equivalent of a searchRadius but for angles.
 
 %optional; if not input, 1 will be used (i.e. no penalty)
-costMatrices(2).parameters.gapPenalty = []; %penalty for increasing temporary disappearance time (disappearing for n frames gets a penalty of gapPenalty^n).
+%costMatrices(2).parameters.gapPenalty = []; %penalty for increasing temporary disappearance time (disappearing for n frames gets a penalty of gapPenalty^n).
+costMatrices(2).parameters.gapPenalty = 2 %(TP)***
 %optional; to calculate MS search radius
 %if not input, MS search radius will be the same as gap closing search radius
 costMatrices(2).parameters.resLimit = []; %resolution limit, which is generally equal to 3 * point spread function sigma.
