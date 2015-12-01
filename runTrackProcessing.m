@@ -28,7 +28,7 @@ function runTrackProcessing(data, varargin)
 ip = inputParser;
 ip.CaseSensitive = false;
 ip.addRequired('data', @isstruct);
-ip.addParamValue('Buffer', [5 5], @(x) numel(x)==2);
+ip.addParamValue('Buffer', [2 2], @(x) numel(x)==2);
 ip.addParamValue('BufferAll', false, @islogical);
 ip.addParamValue('Overwrite', false, @islogical);
 ip.addParamValue('TrackerOutput', 'trackedFeatures.mat', @ischar);
@@ -701,7 +701,7 @@ if postprocess
     %----------------------------------------------------------------------------
     % VI. Cut tracks with sequential events (hotspots) into individual tracks
     %----------------------------------------------------------------------------
-    splitCand = find([tracks.catIdx]==1 & arrayfun(@(i) ~isempty(i.gapIdx), tracks) & trackLengths>4);
+    splitCand = find([tracks.catIdx]==1 & arrayfun(@(i) ~isempty(i.gapIdx), tracks) & trackLengths>2);
 
     % Loop through tracks and test whether gaps are at background intensity
     rmIdx = []; % tracks to remove from list after splitting
@@ -728,7 +728,7 @@ if postprocess
 
         % new segments must be at least 5 frames
         delta = diff([1 gapIdx trackLengths(k)]);
-        gapIdx(delta(1:end-1)<5 | delta(2:end)<5) = [];
+        gapIdx(delta(1:end-1)<2 | delta(2:end)<2) = [];
 
         ng = numel(gapIdx);
         splitIdx = zeros(1,ng);

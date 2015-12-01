@@ -113,7 +113,12 @@ for i = 1:nd
     % Category statistics
     idx_Ia = [lftData(i).catIdx_all]==1;
     idx_Ib = [lftData(i).catIdx_all]==2;
+    idx_Ic = [lftData(i).catIdx_all]==3;
+    idx_Id = [lftData(i).catIdx_all]==4;
     idx_IIa = [lftData(i).catIdx_all]==5;
+    idx_IIb = [lftData(i).catIdx_all]==6;
+    idx_IIc = [lftData(i).catIdx_all]==7;
+    idx_IId = [lftData(i).catIdx_all]==8;
 
     % raw histograms
     N = data(i).movieLength-2*buffer;
@@ -133,7 +138,7 @@ for i = 1:nd
     lftHist_Ia =  [hist(lftData(i).lifetime_s_all(idx_Ia), t).*w  pad0];
     lftHist_Ib =  [hist(lftData(i).lifetime_s_all(idx_Ib), t).*w  pad0];
     lftHist_IIa = [hist(lftData(i).lifetime_s_all(idx_IIa), t).*w pad0];
-    lftHist_total = [hist(lftData(i).lifetime_s_all(idx_Ia | idx_Ib | idx_IIa), t).*w pad0];
+    lftHist_total = [hist(lftData(i).lifetime_s_all(idx_Ia | idx_IIa), t).*w pad0];
 
     % Normalization
     lftRes.lftHist_Ia(i,:) = lftHist_Ia / sum(lftHist_Ia) / framerate;

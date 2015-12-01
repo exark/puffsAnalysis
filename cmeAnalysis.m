@@ -109,7 +109,7 @@ runTracking(data, settings, opts{:});
 %-------------------------------------------------------------------------------
 % 3) Track processing
 %-------------------------------------------------------------------------------
-runTrackProcessing(data, opts{:});
+runTrackProcessing(data, opts{:},'Overwrite',true);
 if numel(data(1).channels)>1
     runSlaveChannelClassification(data, opts{:}, 'np', 5000, 'MasterCh', ip.Results.MasterCh,'Overwrite',false);
 end
