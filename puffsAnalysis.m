@@ -1,4 +1,4 @@
-%[res, data] = cmeAnalysis(varargin) performs the analysis of clathrin-coated pit dynamics on a set of movies.
+%[res, data] = puffsAnalysis(varargin) performs the analysis of clathrin-coated pit dynamics on a set of movies.
 % The analysis comprises detection, tracking, and selection of bona fide CCP structures, and generates lifetime
 % distribution and intensity cohort plots.
 %
@@ -41,12 +41,12 @@
 %
 % Comparing conditions:
 % ---------------------
-% cmeAnalysis() must be run separately on groups of movies from different experimental conditions
+% puffsAnalysis() must be run separately on groups of movies from different experimental conditions
 % (i.e., control vs. perturbation), since the automatic thresholds for identifying bona fide CCPs must be determined
 % on control data. For such comparisons, first run, i.e.,
-%  >> [resCtrl, dataCtrl] = cmeAnalysis;
+%  >> [resCtrl, dataCtrl] = puffsAnalysis;
 % followed by
-%  >> [resPert, dataPert] = cmeAnalysis('ControlData', resCtrl);
+%  >> [resPert, dataPert] = puffsAnalysis('ControlData', resCtrl);
 % In the first run, select the parent directory of the control data. In the second run, select the parent directory
 % of the perturbation condition.
 %
@@ -58,7 +58,7 @@
 
 % Francois Aguet (last mod. 05/29/2013)
 
-function [res, data] = cmeAnalysis(varargin)
+function [res, data] = puffsAnalysis(varargin)
 
 ip = inputParser;
 ip.CaseSensitive = false;
@@ -107,38 +107,5 @@ runTracking(data, settings, opts{:}, 'Overwrite', true);
 % 3) Track processing
 %-------------------------------------------------------------------------------
 runPuffTrackProcessing(data, opts{:}, 'Overwrite', true);
-if numel(data(1).channels)>1
-    runSlaveChannelClassification(data, opts{:}, 'np', 5000, 'MasterCh', ip.Results.MasterCh,'Overwrite',true);
-end
 
-%-------------------------------------------------------------------------------
-% 4) Lifetime analysis
-%-------------------------------------------------------------------------------
-chNames = ip.Results.ChannelNames;
-if isempty(chNames)
-    chNames = data(1).markers;
-end
-
-if ip.Results.PlotAll
-    display = 'on';
-else
-    display = 'off';
-end
-lopts = {'Display', display, 'RemoveOutliers', false, 'Colormap', cmap, 'DisplayMode', ip.Results.DisplayMode,...
-    'SlaveNames', chNames(2:end), 'FirstNFrames', ip.Results.FirstNFrames, 'Overwrite', ip.Results.Overwrite};
-if isempty(ip.Results.ControlData)
-    res.lftRes = runLifetimeAnalysis(data, lopts{:}, 'Overwrite', false);
-else
-    res.lftRes = runLifetimeAnalysis(data, lopts{:},...
-        'MaxIntensityThreshold', ip.Results.ControlData.lftRes.MaxIntensityThreshold);
-end
-
-% Graphical output
-%if ~ip.Results.PlotAll % otherwise this is generated in runLifetimeAnalysis()
-    plotLifetimes(res.lftRes, 'DisplayMode', ip.Results.DisplayMode, 'PlotAll', false,...
-        'SlaveNames', chNames(2:end));
-%end
-
-res.cohorts = plotIntensityCohorts(data, 'MaxIntensityThreshold', res.lftRes.MaxIntensityThreshold,...
-    'ShowBackground', false, 'DisplayMode', 'screen', 'ScaleSlaveChannel', false,...
-    'ShowLegend', false, 'ShowPct', false, 'SlaveName', chNames(2:end));
+res = []; % (ZW) This is a place holder for the return value until we have a runPuffsAnalysis or similar
