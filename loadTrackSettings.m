@@ -9,7 +9,8 @@ ip.CaseSensitive = false;
 ip.addParamValue('Radius', []);
 %ip.addParamValue('GapRadius', [5 10]);
 ip.addParamValue('GapRadius', [1 2]); %(TP)***
-ip.addParamValue('LinkRadius', [5 10]);
+%ip.addParamValue('LinkRadius', [5 10]);
+ip.addParamValue('LinkRadius', [1 4]);
 %ip.addParamValue('MaxGapLength', 2);
 ip.addParamValue('MaxGapLength', 0); %(TP)***
 ip.parse(varargin{:});
