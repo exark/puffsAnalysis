@@ -150,7 +150,8 @@ tracks(1:nTracks) = struct('t', [], 'f', [],...
     'pval_Ar', [], 'isPSF', [],...
     'tracksFeatIndxCG', [], 'gapVect', [], 'gapStatus', [], 'gapIdx', [], 'seqOfEvents', [],...
     'nSeg', [], 'visibility', [], 'lifetime_s', [], 'start', [], 'end', [],...
-    'startBuffer', [], 'endBuffer', [], 'MotionAnalysis', []);
+    'startBuffer', [], 'endBuffer', [], 'MotionAnalysis', [], 'riseRsquared', [], 'fallRsquared', [],...
+    'isPuff', [0]);
 
 % track field names
 idx = structfun(@(i) size(i,2)==size(frameInfo(1).x,2), frameInfo(1));
@@ -743,8 +744,16 @@ end
     end
     fprintf('\n');
 
+    % (ZYW) Once all categorization has been completed, loop through tracks and calculate Rsquared values
+    fprintf('Processing tracks (%s) - fitting attack and decay functions:     ', getShortPath(data));
+    for kj = 1:numel(tracks)
+        % fitting and whatever goes here
+        fprintf('\b\b\b\b%3d%%', round(100*kj/numel(tracks)));
+    end
+
     fprintf('Processing for %s complete - valid/total tracks: %d/%d (%.1f%%).\n',...
         getShortPath(data), sum([tracks.catIdx]==1), numel(tracks), sum([tracks.catIdx]==1)/numel(tracks)*100);
+
 
 end % postprocessing
 
