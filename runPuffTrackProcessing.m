@@ -46,8 +46,13 @@ frameIdx = ip.Results.Frames;
 if ~iscell(frameIdx)
     frameIdx = {frameIdx};
 end
+<<<<<<< HEAD
 %parfor i = 1:length(data)
 for i = 1:length(data) %(TP***): change back to parfor
+=======
+parfor i = 1:length(data)
+%for i = 1:length(data) 
+>>>>>>> master
     if ~(exist([data(i).source filesep 'Tracking' filesep ip.Results.FileName],'file')==2) || overwrite %#ok<PFBNS>
         data(i) = main(data(i), frameIdx{i}, ip.Results);
     else
@@ -258,7 +263,12 @@ tracks(1:nTracks) = struct('t', [], 'f', [],...
     'pval_Ar', [], 'isPSF', [],...
     'tracksFeatIndxCG', [], 'gapVect', [], 'gapStatus', [], 'gapIdx', [], 'seqOfEvents', [],...
     'nSeg', [], 'visibility', [], 'lifetime_s', [], 'start', [], 'end', [],...
+<<<<<<< HEAD
     'startBuffer', [], 'endBuffer', [], 'MotionAnalysis', []);
+=======
+    'startBuffer', [], 'endBuffer', [], 'MotionAnalysis', [],...
+    'riseR2', [], 'fallR2', [], 'isPuff', []); %(TP): last three variables for curve fitting puffs
+>>>>>>> master
 
 % track field names
 idx = structfun(@(i) size(i,2)==size(frameInfo(1).x,2), frameInfo(1));
@@ -853,7 +863,19 @@ end
 
     fprintf('Processing for %s complete - valid/total tracks: %d/%d (%.1f%%).\n',...
         getShortPath(data), sum([tracks.catIdx]==1), numel(tracks), sum([tracks.catIdx]==1)/numel(tracks)*100);
+<<<<<<< HEAD
 
+=======
+    
+    %(TP)Curve-fitting rise and fall of tracks
+    for nt = 1:numel(tracks)
+        [fitted_rise rgof] = riseFit(nt)
+        tracks(n).riseR2 = rgof.R2
+        
+        [fitted_fall fgof] = fallFit(nt)
+        tracks(n).fallR2 = fgof.R2
+    end 
+>>>>>>> master
 end % postprocessing
 
 
@@ -939,3 +961,42 @@ cn = fieldnames(cs);
 for f = 1:numel(cn)
     ps.(cn{f})(ch,idx) = cs.(cn{f});
 end
+<<<<<<< HEAD
+=======
+
+%(TP)curve fitting for rise of track: exponential fit
+function [fitted_curve gof] = riseFit(n) %(TP) n should be track number in ProcessedTracks
+
+x1 = [tracks(n).A(1): tracks(n).A(find(A==max(A)))];
+y1 = [1:numel(x1)]*0.1;
+
+ymax = mean(Y(x1:end));
+ybase = min(Y);
+
+ft = fittype( 'exp1' );
+opts = fitoptions( 'Method', 'NonlinearLeastSquares' );
+opts.Display = 'Off';
+opts.StartPoint = [ybase, ymax]
+
+[fitted_rise rgof] = fit( xData, yData, ft, opts )
+end 
+
+%(TP)curve fitting for falling track: power fit
+function [fitted_curve gof] = fallFit(n) %(TP) n should be track number in ProcessedTracks
+
+x1 = [tracks(n).A(find(A==max(A))):tracks(n).A(find(A==min(max(A):end)))]; %(TP) not including subsequent rises
+y1 = [1:numel(x1)]*0.1;
+
+ymax = mean(Y(x1:end));
+ybase = min(Y);
+
+ft = fittype( 'power1' );
+opts = fitoptions( 'Method', 'NonlinearLeastSquares' );
+opts.Display = 'Off';
+opts.StartPoint = [ybase, ymax]
+
+[fitted_fall fgof] = fit( xData, yData, ft, opts)
+end 
+
+
+>>>>>>> master
