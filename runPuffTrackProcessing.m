@@ -984,7 +984,7 @@ end
 %(TP)curve fitting for falling track: power fit
 function [fitted_curve gof] = fallFit(n) %(TP) n should be track number in ProcessedTracks
 
-x1 = [tracks(n).A(find(A==max(A))):tracks(n).A(find(A==min(max(A):end)))]; %(TP) not including subsequent rises
+x1 = [tracks(n).A(find(A==max(A))):end]; %(TP) not including subsequent rises
 y1 = [1:numel(x1)]*0.1;
 
 ymax = mean(Y(x1:end));
