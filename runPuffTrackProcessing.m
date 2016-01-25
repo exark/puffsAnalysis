@@ -750,11 +750,13 @@ end
     fprintf('Processing tracks (%s) - fitting attack and decay functions:     ', getShortPath(data));
     for kj = 1:numel(tracks)
         %(TP)Curve-fitting rise and fall of tracks
-        [fitted_rise rgof] = riseFit(kj)
-        tracks(kj).riseR2 = rgof.R2
-
-        [fitted_fall fgof] = fallFit(kj)
-        tracks(kj).fallR2 = fgof.R2
+        %fprintf('Processing track (%d)', kj); t
+        %ki = tracks(kj)
+        [fitted_rise rgof] = riseFit(tracks(kj));
+        tracks(kj).riseR2 = rgof.rsquare;
+        
+        [fitted_fall fgof] = fallFit(tracks(kj));
+        tracks(kj).fallR2 = fgof.rsquare;
 
         fprintf('\b\b\b\b%3d%%', round(100*kj/numel(tracks)));
     end
@@ -850,34 +852,45 @@ end
 
 
 %(TP)curve fitting for rise of track: exponential fit
-function [fitted_curve gof] = riseFit(n) %(TP) n should be track number in ProcessedTracks
-  x1 = [tracks(n).A(1): tracks(n).A(find(A==max(A)))];
-  y1 = [1:numel(x1)]*0.1;
-
-  ymax = mean(Y(x1:end));
-  ybase = min(Y);
-
-  ft = fittype( 'exp1' );
-  opts = fitoptions( 'Method', 'NonlinearLeastSquares' );
-  opts.Display = 'Off';
-  opts.StartPoint = [ybase, ymax]
-
-  [fitted_rise rgof] = fit( xData, yData, ft, opts )
-
-
-%(TP)curve fitting for falling track: power fit
-function [fitted_curve gof] = fallFit(n) %(TP) n should be track number in ProcessedTracks
-  x1 = [tracks(n).A(find(A==max(A))):end]; 
-  y1 = [1:numel(x1)]*0.1;
-
-  ymax = mean(Y(x1:end));
-  ybase = min(Y);
-
-  ft = fittype( 'power1' );
-  opts = fitoptions( 'Method', 'NonlinearLeastSquares' );
-  opts.Display = 'Off';
-  opts.StartPoint = [ybase, ymax]
-
-  [fitted_fall fgof] = fit( xData, yData, ft, opts)
-
-
+% function [fitted_rise rgof] = riseFit(track) %(TP) n should be track number in ProcessedTracks
+%   iv = track.A;
+%   x1 = [iv(1:(find(iv==max(iv))))];
+%   y1 = [1:numel(x1)]*0.1;
+% 
+%   ymax = mean(y1(1:numel(x1)));
+%   ybase = min(y1(1:numel(x1)));
+% 
+%   ft = fittype( 'exp1' );
+%   opts = fitoptions( 'Method', 'NonlinearLeastSquares' );
+%   opts.Display = 'Off';
+%   opts.StartPoint = [ybase, ymax]
+%   
+%   if numel(x1)<2
+%       fitted_rise = [];
+%       rgof = struct('rsquare', NaN);
+%   else
+%       [fitted_rise rgof] = fit( x1', y1', ft, opts );
+%   end
+% 
+% %(TP)curve fitting for falling track: power fit
+% function [fitted_fall fgof] = fallFit(track) %(TP) n should be track number in ProcessedTracks
+%   iv = track.A;
+%   x1 = [iv((find(iv==max(iv))):end)]; 
+%   y1 = [1:numel(x1)]*0.1;
+% 
+%   ymax = mean(y1(numel(x1):end));
+%   ybase = min(y1(numel(x1):end));
+% 
+%   ft = fittype( 'power1' );
+%   opts = fitoptions( 'Method', 'NonlinearLeastSquares' );
+%   opts.Display = 'Off';
+%   opts.StartPoint = [ybase, ymax];
+% 
+%   if numel(x1)<2
+%       fitted_fall = [];
+%       fgof = struct('rsquare', 'NaN');
+%   else
+%       [fitted_fall fgof] = fit( x1', y1', ft, opts);
+%   end
+% 
+% 
