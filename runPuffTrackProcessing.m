@@ -847,7 +847,7 @@ cn = fieldnames(cs);
 for f = 1:numel(cn)
     ps.(cn{f})(ch,idx) = cs.(cn{f});
 end
-end 
+
 
 %(TP)curve fitting for rise of track: exponential fit
 function [fitted_curve gof] = riseFit(n) %(TP) n should be track number in ProcessedTracks
@@ -863,7 +863,7 @@ function [fitted_curve gof] = riseFit(n) %(TP) n should be track number in Proce
   opts.StartPoint = [ybase, ymax]
 
   [fitted_rise rgof] = fit( xData, yData, ft, opts )
-end
+
 
 %(TP)curve fitting for falling track: power fit
 function [fitted_curve gof] = fallFit(n) %(TP) n should be track number in ProcessedTracks
@@ -879,5 +879,5 @@ function [fitted_curve gof] = fallFit(n) %(TP) n should be track number in Proce
   opts.StartPoint = [ybase, ymax]
 
   [fitted_fall fgof] = fit( xData, yData, ft, opts)
-end
+
 
