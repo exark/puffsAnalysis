@@ -46,17 +46,8 @@ frameIdx = ip.Results.Frames;
 if ~iscell(frameIdx)
     frameIdx = {frameIdx};
 end
-<<<<<<< HEAD
+
 parfor i = 1:length(data)
-=======
-<<<<<<< HEAD
-%parfor i = 1:length(data)
-for i = 1:length(data) %(TP***): change back to parfor
-=======
-parfor i = 1:length(data)
-%for i = 1:length(data)
->>>>>>> master
->>>>>>> 81e2afd88957a026b752eaf796c39c8cfbfe6637
     if ~(exist([data(i).source filesep 'Tracking' filesep ip.Results.FileName],'file')==2) || overwrite %#ok<PFBNS>
         data(i) = main(data(i), frameIdx{i}, ip.Results);
     else
@@ -160,17 +151,9 @@ tracks(1:nTracks) = struct('t', [], 'f', [],...
     'pval_Ar', [], 'isPSF', [],...
     'tracksFeatIndxCG', [], 'gapVect', [], 'gapStatus', [], 'gapIdx', [], 'seqOfEvents', [],...
     'nSeg', [], 'visibility', [], 'lifetime_s', [], 'start', [], 'end', [],...
-<<<<<<< HEAD
-    'startBuffer', [], 'endBuffer', [], 'MotionAnalysis', [], 'riseRsquared', [], 'fallRsquared', [],...
-    'isPuff', [0]);
-=======
-<<<<<<< HEAD
-    'startBuffer', [], 'endBuffer', [], 'MotionAnalysis', []);
-=======
     'startBuffer', [], 'endBuffer', [], 'MotionAnalysis', [],...
-    'riseR2', [], 'fallR2', [], 'isPuff', []); %(TP): last three variables for curve fitting puffs
->>>>>>> master
->>>>>>> 81e2afd88957a026b752eaf796c39c8cfbfe6637
+    'riseR2', [], 'fallR2', [], 'isPuff', [0]); %(TP): last three variables for curve fitting puffs
+
 
 % track field names
 idx = structfun(@(i) size(i,2)==size(frameInfo(1).x,2), frameInfo(1));
@@ -772,7 +755,7 @@ end
 
         [fitted_fall fgof] = fallFit(kj)
         tracks(kj).fallR2 = fgof.R2
-        
+
         fprintf('\b\b\b\b%3d%%', round(100*kj/numel(tracks)));
     end
 
