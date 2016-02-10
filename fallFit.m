@@ -11,7 +11,7 @@ function [fitted_fall fgof] = fallFit(track) %(TP) n should be track number in P
 
   if numel(x1)<2
       fitted_fall = [];
-      fgof = struct('rsquare', 'NaN');
+      fgof = struct('rsquare', NaN);
   else
       [fitted_fall fgof] = fit( x1', y1', ft, opts);
   end
