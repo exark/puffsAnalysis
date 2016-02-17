@@ -145,14 +145,15 @@ end % preprocess
 
 % Set up track structure
 tracks(1:nTracks) = struct('t', [], 'f', [],...
-    'x', [], 'y', [], 'A', [], 'c', [],...
+    'x', [], 'y', [], 'A', [],... 
+    'c', [],'cr', [], 'cf',[], 'c_norm', [],...
     'x_pstd', [], 'y_pstd', [], 'A_pstd', [], 'c_pstd', [],...
     'sigma_r', [], 'SE_sigma_r', [],...
     'pval_Ar', [], 'isPSF', [],...
     'tracksFeatIndxCG', [], 'gapVect', [], 'gapStatus', [], 'gapIdx', [], 'seqOfEvents', [],...
     'nSeg', [], 'visibility', [], 'lifetime_s', [], 'start', [], 'end', [],...
     'startBuffer', [], 'endBuffer', [], 'MotionAnalysis', [],...
-    'riseR2', [], 'fallR2', [], 'isPuff', [0]); %(TP): last three variables for curve fitting puffs
+    'riseR2', [], 'fallR2', [], 'fall_v', [],'isPuff', [0]); %(TP): last three variables for curve fitting puffs
 
 
 % track field names
@@ -752,12 +753,18 @@ end
         %(TP)Curve-fitting rise and fall of tracks
         %fprintf('Processing track (%d)', kj); t
         %ki = tracks(kj)
-        [fitted_rise rgof] = riseFit(tracks(kj));
+        [fitted_rise rgof numRise] = riseFit(tracks(kj));
         tracks(kj).riseR2 = rgof.rsquare;
+        tracks(kj).cr = mean(tracks(kj).c(1:numRise));
         
-        [fitted_fall fgof] = fallFit(tracks(kj));
+        [fitted_fall fgof numFall] = fallFit(tracks(kj));
         tracks(kj).fallR2 = fgof.rsquare;
-
+        tracks(kj).cf = mean(tracks(kj).c(numRise:end));
+        
+        cdiff = tracks(kj).cf - tracks(kj).cr;
+        tracks(kj).c_norm = (tracks(kj).A)/cdiff;
+        tracks(kj).fall_v = (find(tracks(kj).A(numRise:end)== min(tracks(kj).A(numRise:end))))*0.1;  
+        
         fprintf('\b\b\b\b%3d%%', round(100*kj/numel(tracks)));
     end
 

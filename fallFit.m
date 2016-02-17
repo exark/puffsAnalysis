@@ -1,9 +1,10 @@
-function [fitted_fall fgof] = fallFit(track) %(TP) n should be track number in ProcessedTracks
+function [fitted_fall fgof numFall] = fallFit(track) %(TP) n should be track number in ProcessedTracks
   iv = track.A;
   y1 = [iv((find(iv==max(iv))):end)];
   x1 = [1:numel(y1)]*0.1;
   y1 = y1(find(~isnan(y1)));
   x1 = x1(find(~isnan(y1)));
+  numFall = numel(y1);
 
   ft = fittype( 'power1' );
   opts = fitoptions( 'Method', 'NonlinearLeastSquares' );

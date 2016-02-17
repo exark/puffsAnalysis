@@ -360,9 +360,9 @@ if exist([data.source ip.Results.RelativePath filesep fileName], 'file')==2 && i
         bgA = [bgA{:}];
     end
     clear tmp;
-    tracks = tracks([tracks.lifetime_s] >= data.framerate*ip.Results.Cutoff_f);
-    [~, sortIdx] = sort([tracks.lifetime_s], 'descend');
-    tracks = tracks(sortIdx);
+   % (TP) tracks = tracks([tracks.lifetime_s] >= data.framerate*ip.Results.Cutoff_f);
+    %[~, sortIdx] = sort([tracks.lifetime_s], 'descend');
+    %tracks = tracks(sortIdx);
 
     % apply cell mask
     if ~isempty(cellMask)
