@@ -146,7 +146,7 @@ end % preprocess
 % Set up track structure
 tracks(1:nTracks) = struct('t', [], 'f', [],...
     'x', [], 'y', [], 'A', [],... 
-    'c', [],'cr', [], 'cf',[], 'c_norm', [],...
+    'c', [], 'c_norm', [],...
     'x_pstd', [], 'y_pstd', [], 'A_pstd', [], 'c_pstd', [],...
     'sigma_r', [], 'SE_sigma_r', [],...
     'pval_Ar', [], 'isPSF', [],...
@@ -758,14 +758,14 @@ end
         %ki = tracks(kj)
         [fitted_rise rgof numRise] = riseFit(tracks(kj));
         tracks(kj).riseR2 = rgof.rsquare;
-        tracks(kj).cr = mean(tracks(kj).c(1:numRise)); %background values for rise portion of track
+        cr = mean(tracks(kj).c(1:numRise)); %background values for rise portion of track
         
         [fitted_fall fgof numFall] = fallFit(tracks(kj));
         tracks(kj).pfallR2 = fgof(1).rsquare; %R2 value for fall portion of track with power fit
         tracks(kj).efallR2 = fgof(2).rquare; %R2 value for fall portion of track with exp fit
-        tracks(kj).cf = mean(tracks(kj).c(numRise:end)); %background values for fall portion of track
+        cf = mean(tracks(kj).c(numRise:end)); %background values for fall portion of track
         
-        cdiff = tracks(kj).cf - tracks(kj).cr;
+        cdiff = cf - cr;
         tracks(kj).c_norm = (tracks(kj).A)/cdiff; %normalized background to intensity 
         tracks(kj).fall_v = (find(tracks(kj).A(numRise:end)== min(tracks(kj).A(numRise:end))))*0.1; %velocity from peak to lowest point in fall portion
         risemin = find(tracks(kj).A(1:numRise)== min(tracks(kj).A(1:numRise)));
