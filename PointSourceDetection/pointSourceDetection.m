@@ -67,7 +67,7 @@ fg = conv2(g', g, imgXT, 'valid');
 fu = conv2(u', u, imgXT, 'valid');
 fu2 = conv2(u', u, imgXT.^2, 'valid');
 
-% Laplacian of Gaussian
+% Laplacian of Gaussian - edge detection 
 gx2 = g.*x.^2;
 imgLoG = 2*fg/sigma^2 - (conv2(g, gx2, imgXT, 'valid')+conv2(gx2, g, imgXT, 'valid'))/sigma^4;
 imgLoG = imgLoG / (2*pi*sigma^2);

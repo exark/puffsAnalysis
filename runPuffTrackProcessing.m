@@ -146,14 +146,14 @@ end % preprocess
 % Set up track structure
 tracks(1:nTracks) = struct('t', [], 'f', [],...
     'x', [], 'y', [], 'A', [],... 
-    'c', [], 'c_norm', [],...
+    'c', [], 'a_norm', [],...
     'x_pstd', [], 'y_pstd', [], 'A_pstd', [], 'c_pstd', [],...
     'sigma_r', [], 'SE_sigma_r', [],...
     'pval_Ar', [], 'isPSF', [],...
     'tracksFeatIndxCG', [], 'gapVect', [], 'gapStatus', [], 'gapIdx', [], 'seqOfEvents', [],...
     'nSeg', [], 'visibility', [], 'lifetime_s', [], 'start', [], 'end', [],...
     'startBuffer', [], 'endBuffer', [], 'MotionAnalysis', [],...
-    'riseR2', [], 'fallR2', [], 'rise_v', [], 'fall_v', [],'isPuff', [0]); 
+    'riseR2', [], 'pfallR2', [], 'efallR2', [], 'rise_v', [], 'fall_v', [],'isPuff', [0]); 
     %(TP): last three variables for curve fitting puffs
     % isPuff-> 0 = maybe, 1 = puff, 2 = nonpuff
 
@@ -762,14 +762,14 @@ end
         
         [fitted_fall fgof numFall] = fallFit(tracks(kj));
         tracks(kj).pfallR2 = fgof(1).rsquare; %R2 value for fall portion of track with power fit
-        tracks(kj).efallR2 = fgof(2).rquare; %R2 value for fall portion of track with exp fit
+        tracks(kj).efallR2 = fgof(2).rsquare; %R2 value for fall portion of track with exp fit
         cf = mean(tracks(kj).c(numRise:end)); %background values for fall portion of track
         
         cdiff = cf - cr;
-        tracks(kj).c_norm = (tracks(kj).A)/cdiff; %normalized background to intensity 
+        tracks(kj).a_norm = (tracks(kj).A)/cdiff; %normalized background to intensity 
         tracks(kj).fall_v = (find(tracks(kj).A(numRise:end)== min(tracks(kj).A(numRise:end))))*0.1; %velocity from peak to lowest point in fall portion
         risemin = find(tracks(kj).A(1:numRise)== min(tracks(kj).A(1:numRise)));
-        tracks(kj).rise_v = (find(tracks(kj).A == max(tracks(kj).A)) - risemin)*0.1 ; %velocity from lowest point to peak in rise portion
+        tracks(kj).rise_v = (find(tracks(kj).A == max(tracks(kj).A)) - (risemin))*0.1 ; %velocity from lowest point to peak in rise portion
         
         fprintf('\b\b\b\b%3d%%', round(100*kj/numel(tracks)));
     end
