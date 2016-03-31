@@ -17,8 +17,8 @@ function [fitted_fall fgof numFall] = fallFit(track)
   
   if numel(x1)<2
       fitted_fall = [];
-      fgof(1).rsquare = NaN;
-      fgof(2).rsquare = NaN;
+      fgof(1).rsquare = -1;
+      fgof(2).rsquare = -1;
   else
       [fitted_fall{1} fgof(1)] = fit( x1', y1', ftp, opts); % powerfit
       [fitted_fall{2} fgof(2)] = fit(x1', y1', fte, opts); %expfit

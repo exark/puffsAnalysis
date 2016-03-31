@@ -12,7 +12,7 @@ function [fitted_rise rgof numRise] = riseFit(track) %(TP) n should be track num
 
   if numel(x1)<2
       fitted_rise = [];
-      rgof = struct('rsquare', NaN);
+      rgof = struct('rsquare', -1);
   else
       [fitted_rise rgof] = fit(x1', y1', ft, opts );
   end
