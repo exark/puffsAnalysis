@@ -145,19 +145,21 @@ end % preprocess
 
 % Set up track structure
 tracks(1:nTracks) = struct('t', [], 'f', [],...
-    'x', [], 'y', [], 'A', [],... 
-    'c', [], 'a_norm', [],...
+    'x', [], 'y', [], 'A', [], 'maxA', [],... 
+    'c', [], 'meanc_fall',[],'meanc_rise',[], 'a_norm', [],...
     'x_pstd', [], 'y_pstd', [], 'A_pstd', [], 'c_pstd', [],...
     'sigma_r', [], 'SE_sigma_r', [],...
-    'pval_Ar', [], 'isPSF', [],...
-    'tracksFeatIndxCG', [], 'gapVect', [], 'gapStatus', [], 'gapIdx', [], 'seqOfEvents', [],...
-    'nSeg', [], 'visibility', [], 'lifetime_s', [], 'start', [], 'end', [],...
+    'isPSF', [],'visibility', [], 'lifetime_s', [], 'start', [], 'end', [],...
     'startBuffer', [], 'endBuffer', [], 'MotionAnalysis', [],...
-    'riseR2', [], 'pfallR2', [], 'efallR2', [], 'rise_v', [], 'fall_v', [],'isPuff', [0]); 
-    %(TP): last three variables for curve fitting puffs
+    'maskA', [], 'maskN',[], 'mask_Ar',[],...
+    'riseR2', [], 'pfallR2', [], 'efallR2', [], 'rise_v', [], 'fall_v', [],...
+    'slope_RSS', [], 'slope_sigmar', [], 'isPuff', [0]); 
+    %(TP): 
+    % meanc_fall and _rise are the average background intensities for the fall and rise portions
+    % a_norm is the intensity normalized to background
+    % slope_RSS and slope_sigma are the slopes of those values for the fall portion of the track
+    % rise_v and fall_v = velocities
     % isPuff-> 0 = maybe, 1 = puff, 2 = nonpuff
-
-
 
 % track field names
 idx = structfun(@(i) size(i,2)==size(frameInfo(1).x,2), frameInfo(1));
@@ -296,6 +298,11 @@ for k = 1:nTracks
 end
 fprintf('\n');
 
+%(TP)Remove all tracks with lifetime < 0.4
+rmlt= find([tracks.lifetime_s]<0.4);
+tracks(rmlt) = [];
+buffer(rmlt,:) = [];
+    
 % remove tracks that fall into image boundary
 minx = round(arrayfun(@(t) min(t.x(:)), tracks));
 maxx = round(arrayfun(@(t) max(t.x(:)), tracks));
@@ -754,22 +761,35 @@ end
     fprintf('Processing tracks (%s) - fitting attack and decay functions:     ', getShortPath(data));
     for kj = 1:numel(tracks)
         %(TP)Curve-fitting rise and fall of tracks
-        %fprintf('Processing track (%d)', kj); t
-        %ki = tracks(kj)
         [fitted_rise rgof numRise] = riseFit(tracks(kj));
         tracks(kj).riseR2 = rgof.rsquare;
-        cr = mean(tracks(kj).c(1:numRise)); %background values for rise portion of track
         
         [fitted_fall fgof numFall] = fallFit(tracks(kj));
         tracks(kj).pfallR2 = fgof(1).rsquare; %R2 value for fall portion of track with power fit
         tracks(kj).efallR2 = fgof(2).rsquare; %R2 value for fall portion of track with exp fit
-        cf = mean(tracks(kj).c(numRise:end)); %background values for fall portion of track
         
-        cdiff = cf - cr;
+        %(TP) Mean background intensity for rise and fall 
+        tracks(kj).meanc_rise = mean(tracks(kj).c(1:numRise)); %background values for rise portion of track
+        tracks(kj).meanc_fall = mean(tracks(kj).c(numRise:end)); %background values for fall portion of track
+        
+        %(TP) Normalized intensity to background and velocities to rise and fall
+        cdiff = tracks(kj).meanc_fall - tracks(kj).meanc_rise; 
         tracks(kj).a_norm = (tracks(kj).A)/cdiff; %normalized background to intensity 
         tracks(kj).fall_v = (find(tracks(kj).A(numRise:end)== min(tracks(kj).A(numRise:end))))*0.1; %velocity from peak to lowest point in fall portion
         risemin = find(tracks(kj).A(1:numRise)== min(tracks(kj).A(1:numRise)));
         tracks(kj).rise_v = (find(tracks(kj).A == max(tracks(kj).A)) - (risemin))*0.1 ; %velocity from lowest point to peak in rise portion
+        
+        %(TP) Max intensity
+        tracks(kj).maxA = max(tracks(kj).A);
+        
+        %(TP) RSS and sigma_r slopes for fall portion of tracks
+        rss = tracks(kj).RSS(numRise:end);
+        sig = tracks(kj).sigma_r(numRise:end);
+        x = linspace(0.1,0.1*numel(rss),numel(rss));
+        coefficients = polyfit(x,rss,1);
+        tracks(kj).slope_RSS = coefficients(1);
+        coefficients = polyfit(x,sig,1);
+        tracks(kj).slope_sigmar = coefficients(1);
         
         fprintf('\b\b\b\b%3d%%', round(100*kj/numel(tracks)));
     end
