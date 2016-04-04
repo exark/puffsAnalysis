@@ -299,9 +299,9 @@ end
 fprintf('\n');
 
 %(TP)Remove all tracks with lifetime < 0.4
-rmlt= find([tracks.lifetime_s]<0.4);
-tracks(rmlt) = [];
-buffer(rmlt,:) = [];
+% rmlt= find([tracks.lifetime_s]<0.4);
+% tracks(rmlt) = [];
+% buffer(rmlt,:) = [];
     
 % remove tracks that fall into image boundary
 minx = round(arrayfun(@(t) min(t.x(:)), tracks));
