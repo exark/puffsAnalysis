@@ -151,14 +151,18 @@ tracks(1:nTracks) = struct('t', [], 'f', [],...
     'sigma_r', [], 'SE_sigma_r', [],...
     'isPSF', [],'visibility', [], 'lifetime_s', [], 'start', [], 'end', [],...
     'startBuffer', [], 'endBuffer', [], 'MotionAnalysis', [],...
-    'maskA', [], 'maskN',[], 'mask_Ar',[],...
+    'cks', [], 'maskN',[], 'mask_Ar',[],...
     'riseR2', [], 'pfallR2', [], 'efallR2', [], 'rise_v', [], 'fall_v', [],...
+    'cfcr',[],'aaf',[],'atoc',[],...
     'slope_RSS', [], 'slope_sigmar', [], 'isPuff', [0]); 
     %(TP): 
     % meanc_fall and _rise are the average background intensities for the fall and rise portions
     % a_norm is the intensity normalized to background
     % slope_RSS and slope_sigma are the slopes of those values for the fall portion of the track
     % rise_v and fall_v = velocities
+    % cfcr = max background in the fall / max background in the rise
+    % aaf = min intensity in the fall/maxA 
+    % atoc = cfcr/aaf, how much of the rise in background is due to decrease in intensity
     % isPuff-> 0 = maybe, 1 = puff, 2 = nonpuff
 
 % track field names
@@ -791,6 +795,11 @@ end
         coefficients = polyfit(x,sig,1);
         tracks(kj).slope_sigmar = coefficients(1);
         
+        %(TP) dependency of rise in background to decrease in intensity 
+        tracks(kj).cfcr = max([tracks(kj).c(numRise:end)])- max([tracks(kj).c(1:numRise)]);
+        tracks(kj).aaf = min([tracks(kj).A(numRise:end)]) - tracks(kj).maxA;
+        tracks(kj).atoc = tracks(kj).cfcr/tracks(kj).aaf;
+       
         fprintf('\b\b\b\b%3d%%', round(100*kj/numel(tracks)));
     end
 

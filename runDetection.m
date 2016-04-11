@@ -143,7 +143,8 @@ parfor k = 1:data.movieLength
         
         % get component size and intensity for each detection
         CC = bwconncomp(mask(:,:,k));
-        % (TP) matrix of connected components, values >= 0, 0 = bg, 1 = 1 obj, 2 = 2 obj
+        % (TP) matrix of connected components, values >= 0, 0 = bg, 1 =
+        % obj#1, 2 = obj#2
         labels = labelmatrix(CC);
         % mask label for each detection
         loclabels = labels(sub2ind(size(img), pstruct.y_init, pstruct.x_init));
