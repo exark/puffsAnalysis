@@ -900,7 +900,7 @@ set(hz, 'ActionPostCallback', @czoom);
     function trackSlider_Callback(~, eventdata)
 
         %obj = get(eventdata, 'AffectedObject');
-        obj = eventdata.AffectedObject
+        obj = eventdata.AffectedObject;
 
         t0 = round(get(obj, 'Value'));
         tmp = find(selIndex);
@@ -1159,7 +1159,7 @@ set(hz, 'ActionPostCallback', @czoom);
 
         function maxSlider_Callback(~, eventdata)
            % obj = get(eventdata, 'AffectedObject');
-           obj = eventdata.AffectedObject
+           obj = eventdata.AffectedObject;
 
             maxVal = round(get(obj, 'Value'));
             if maxVal <= minVal
@@ -1351,7 +1351,7 @@ set(hz, 'ActionPostCallback', @czoom);
 
 
     function trackButton_Callback(varargin)
-        [x0,y0] = ginput(1);
+        [x0,y0] = ginputx(1);
         ci = find(handles.fAxes(:,1)==gca, 1);
         if ~isempty(ci) && ~isempty(tracks)
             % track segments visible in current frame
