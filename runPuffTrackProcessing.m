@@ -145,7 +145,7 @@ end % preprocess
 
 % Set up track structure
 tracks(1:nTracks) = struct('t', [], 'f', [],...
-    'x', [], 'y', [], 'A', [], 'maxA', [],... 
+    'x', [], 'y', [], 'A', [], 'maxA', [],...
     'c', [], 'meanc_fall',[],'meanc_rise',[], 'a_norm', [],...
     'x_pstd', [], 'y_pstd', [], 'A_pstd', [], 'c_pstd', [],...
     'sigma_r', [], 'SE_sigma_r', [],...
@@ -154,14 +154,14 @@ tracks(1:nTracks) = struct('t', [], 'f', [],...
     'cks', [], 'maskN',[], 'mask_Ar',[],...
     'riseR2', [], 'pfallR2', [], 'efallR2', [], 'rise_v', [], 'fall_v', [],...
     'cfcr',[],'aaf',[],'atoc',[],...
-    'slope_RSS', [], 'slope_sigmar', [], 'isPuff', [0]); 
-    %(TP): 
+    'slope_RSS', [], 'slope_sigmar', [], 'isPuff', [0]);
+    %(TP):
     % meanc_fall and _rise are the average background intensities for the fall and rise portions
     % a_norm is the intensity normalized to background
     % slope_RSS and slope_sigma are the slopes of those values for the fall portion of the track
     % rise_v and fall_v = velocities
     % cfcr = max background in the fall / max background in the rise
-    % aaf = min intensity in the fall/maxA 
+    % aaf = min intensity in the fall/maxA
     % atoc = cfcr/aaf, how much of the rise in background is due to decrease in intensity
     % isPuff-> 0 = maybe, 1 = puff, 2 = nonpuff
 
@@ -306,7 +306,7 @@ fprintf('\n');
 % rmlt= find([tracks.lifetime_s]<0.4);
 % tracks(rmlt) = [];
 % buffer(rmlt,:) = [];
-    
+
 % remove tracks that fall into image boundary
 minx = round(arrayfun(@(t) min(t.x(:)), tracks));
 maxx = round(arrayfun(@(t) max(t.x(:)), tracks));
@@ -767,25 +767,25 @@ end
         %(TP)Curve-fitting rise and fall of tracks
         [fitted_rise rgof numRise] = riseFit(tracks(kj));
         tracks(kj).riseR2 = rgof.rsquare;
-        
+
         [fitted_fall fgof numFall] = fallFit(tracks(kj));
         tracks(kj).pfallR2 = fgof(1).rsquare; %R2 value for fall portion of track with power fit
         tracks(kj).efallR2 = fgof(2).rsquare; %R2 value for fall portion of track with exp fit
-        
-        %(TP) Mean background intensity for rise and fall 
+
+        %(TP) Mean background intensity for rise and fall
         tracks(kj).meanc_rise = mean(tracks(kj).c(1:numRise)); %background values for rise portion of track
         tracks(kj).meanc_fall = mean(tracks(kj).c(numRise:end)); %background values for fall portion of track
-        
+
         %(TP) Normalized intensity to background and velocities to rise and fall
-        cdiff = tracks(kj).meanc_fall - tracks(kj).meanc_rise; 
-        tracks(kj).a_norm = (tracks(kj).A)/cdiff; %normalized background to intensity 
+        cdiff = tracks(kj).meanc_fall - tracks(kj).meanc_rise;
+        tracks(kj).a_norm = (tracks(kj).A)/cdiff; %normalized background to intensity
         tracks(kj).fall_v = (find(tracks(kj).A(numRise:end)== min(tracks(kj).A(numRise:end))))*0.1; %velocity from peak to lowest point in fall portion
         risemin = find(tracks(kj).A(1:numRise)== min(tracks(kj).A(1:numRise)));
         tracks(kj).rise_v = (find(tracks(kj).A == max(tracks(kj).A)) - (risemin))*0.1 ; %velocity from lowest point to peak in rise portion
-        
+
         %(TP) Max intensity
         tracks(kj).maxA = max(tracks(kj).A);
-        
+
         %(TP) RSS and sigma_r slopes for fall portion of tracks
         rss = tracks(kj).RSS(numRise:end);
         sig = tracks(kj).sigma_r(numRise:end);
@@ -794,14 +794,15 @@ end
         tracks(kj).slope_RSS = coefficients(1);
         coefficients = polyfit(x,sig,1);
         tracks(kj).slope_sigmar = coefficients(1);
-        
-        %(TP) dependency of rise in background to decrease in intensity 
+
+        %(TP) dependency of rise in background to decrease in intensity
         tracks(kj).cfcr = max([tracks(kj).c(numRise:end)])- max([tracks(kj).c(1:numRise)]);
         tracks(kj).aaf = min([tracks(kj).A(numRise:end)]) - tracks(kj).maxA;
         tracks(kj).atoc = tracks(kj).cfcr/tracks(kj).aaf;
-       
+
         fprintf('\b\b\b\b%3d%%', round(100*kj/numel(tracks)));
     end
+    fprintf('\n');
 
     fprintf('Processing for %s complete - valid/total tracks: %d/%d (%.1f%%).\n',...
         getShortPath(data), sum([tracks.catIdx]==1), numel(tracks), sum([tracks.catIdx]==1)/numel(tracks)*100);
@@ -825,9 +826,7 @@ if isunix
 end
 processingInfo.procFlag = [preprocess postprocess];
 
-save([data.source 'Tracking' filesep opts.FileName], 'tracks', 'processingInfo');
-
-
+save([data.source 'Tracking' filesep opts.FileName], 'tracks', 'processingInfo','-v7.3');
 
 % calculate track fields for gap or buffer position
 function [ps] = interpTrack(x, y, frame, labels, annularMask, sigma, sigmaCh, kLevel)
@@ -884,55 +883,9 @@ T = (ps.A - res.std*kLevel) ./ scomb;
 ps.pval_Ar = tcdf(-T, df2);
 
 
-
 function ps = mergeStructs(ps, ch, idx, cs)
 
 cn = fieldnames(cs);
 for f = 1:numel(cn)
     ps.(cn{f})(ch,idx) = cs.(cn{f});
 end
-
-
-%(TP)curve fitting for rise of track: exponential fit
-% function [fitted_rise rgof] = riseFit(track) %(TP) n should be track number in ProcessedTracks
-%   iv = track.A;
-%   x1 = [iv(1:(find(iv==max(iv))))];
-%   y1 = [1:numel(x1)]*0.1;
-% 
-%   ymax = mean(y1(1:numel(x1)));
-%   ybase = min(y1(1:numel(x1)));
-% 
-%   ft = fittype( 'exp1' );
-%   opts = fitoptions( 'Method', 'NonlinearLeastSquares' );
-%   opts.Display = 'Off';
-%   opts.StartPoint = [ybase, ymax]
-%   
-%   if numel(x1)<2
-%       fitted_rise = [];
-%       rgof = struct('rsquare', NaN);
-%   else
-%       [fitted_rise rgof] = fit( x1', y1', ft, opts );
-%   end
-% 
-% %(TP)curve fitting for falling track: power fit
-% function [fitted_fall fgof] = fallFit(track) %(TP) n should be track number in ProcessedTracks
-%   iv = track.A;
-%   x1 = [iv((find(iv==max(iv))):end)]; 
-%   y1 = [1:numel(x1)]*0.1;
-% 
-%   ymax = mean(y1(numel(x1):end));
-%   ybase = min(y1(numel(x1):end));
-% 
-%   ft = fittype( 'power1' );
-%   opts = fitoptions( 'Method', 'NonlinearLeastSquares' );
-%   opts.Display = 'Off';
-%   opts.StartPoint = [ybase, ymax];
-% 
-%   if numel(x1)<2
-%       fitted_fall = [];
-%       fgof = struct('rsquare', 'NaN');
-%   else
-%       [fitted_fall fgof] = fit( x1', y1', ft, opts);
-%   end
-% 
-% 
