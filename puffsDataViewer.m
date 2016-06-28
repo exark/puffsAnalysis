@@ -220,6 +220,11 @@ end
 handles.trackLabel = uicontrol('Style', 'text', 'String', 'Track 1',...
     'Units', 'pixels', 'Position', [pos(3)-70 pos(4)-20 100 15], 'HorizontalAlignment', 'left');
 
+handles.trackPicker = uicontrol('Style','edit', 'String', '1',...
+    'Units','pixels','Position', [pos(3)-180 pos(4)-(1.35*h) 100 15], 'HorizontalAlignment','left');
+handles.trackPickerButton = uicontrol('Style','pushbutton', 'String', 'Go!',...
+    'Units','pixels','Position', [pos(3)-75 pos(4)-(1.35*h) 25 15], 'HorizontalAlignment','left','Callback', @trackPicker_Callback);
+
 handles.trackSlider = uicontrol('Style', 'slider',...
     'Value', 1, 'SliderStep', [0.01 0.05], 'Min', 1, 'Max', 1000,...
     'Position', [pos(3)-24 120 10 h_tot]);
@@ -896,6 +901,10 @@ set(hz, 'ActionPostCallback', @czoom);
 
     end
 
+    function trackPicker_Callback(~, eventdata)
+        tcur = str2num(get(handles.trackPicker,'string'));
+        updateTrack();
+    end
 
     function trackSlider_Callback(~, eventdata)
 
