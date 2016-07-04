@@ -101,7 +101,7 @@ cmap = plotPSNRDistribution(data, 'Pool', false, 'Channel', ip.Results.MasterCh)
 %-------------------------------------------------------------------------------
 %settings = loadTrackSettings('Radius', ip.Results.TrackingRadius, 'MaxGapLength', ip.Results.TrackingGapLength);
 settings = loadTrackSettings(); %(TP)***
-runTracking(data, settings, opts{:}, 'Overwrite', false);
+runTracking(data, settings, opts{:}da);
 
 %-------------------------------------------------------------------------------
 % 3) Track processing

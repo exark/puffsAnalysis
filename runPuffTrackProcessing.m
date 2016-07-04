@@ -154,11 +154,10 @@ tracks(1:nTracks) = struct('t', [], 'f', [],...
     'cks', [], 'maskN',[], 'mask_Ar',[],...
     'riseR2', [], 'pfallR2', [], 'efallR2', [], 'rise_v', [], 'fall_v', [],...
     'cfcr',[],'aaf',[],'atoc',[],...
-    'slope_RSS', [], 'slope_sigmar', [], 'isPuff', [0]);
+    'isPuff', [0]);
     %(TP):
     % meanc_fall and _rise are the average background intensities for the fall and rise portions
     % a_norm is the intensity normalized to background
-    % slope_RSS and slope_sigma are the slopes of those values for the fall portion of the track
     % rise_v and fall_v = velocities
     % cfcr = max background in the fall / max background in the rise
     % aaf = min intensity in the fall/maxA
@@ -303,9 +302,24 @@ end
 fprintf('\n');
 
 %(TP)Remove all tracks with lifetime < 0.4
-% rmlt= find([tracks.lifetime_s]<0.4);
-% tracks(rmlt) = [];
-% buffer(rmlt,:) = [];
+rmlt= find([tracks.lifetime_s]<0.4);
+tracks(rmlt) = [];
+buffer(rmlt,:) = [];
+
+%(ZYW) Remove all tracks that start in first frame and have peak amplitude
+% in first frame of track.
+rmft = [];
+for i=1:numel(tracks)
+  ampl = tracks(i).A + tracks(i).c;
+  if tracks(i).start == 1
+    [~, ii] = max(ampl);
+    if ii == 1
+      rmft = [rmft i];
+    end
+  end
+end
+tracks(rmft) = [];
+buffer(rmft,:) = [];
 
 % remove tracks that fall into image boundary
 minx = round(arrayfun(@(t) min(t.x(:)), tracks));
@@ -785,15 +799,6 @@ end
 
         %(TP) Max intensity
         tracks(kj).maxA = max(tracks(kj).A);
-
-        %(TP) RSS and sigma_r slopes for fall portion of tracks
-        rss = tracks(kj).RSS(numRise:end);
-        sig = tracks(kj).sigma_r(numRise:end);
-        x = linspace(0.1,0.1*numel(rss),numel(rss));
-        coefficients = polyfit(x,rss,1);
-        tracks(kj).slope_RSS = coefficients(1);
-        coefficients = polyfit(x,sig,1);
-        tracks(kj).slope_sigmar = coefficients(1);
 
         %(TP) dependency of rise in background to decrease in intensity
         tracks(kj).cfcr = max([tracks(kj).c(numRise:end)])- max([tracks(kj).c(1:numRise)]);

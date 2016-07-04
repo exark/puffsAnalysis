@@ -13,7 +13,6 @@ function [fitted_fall fgof numFall] = fallFit(track)
   ftp = fittype( 'power1' );
   fte = fittype( 'exp1' );
   opts = fitoptions( 'Method', 'NonlinearLeastSquares','Display','off');
-  opts.Display = 'final';
 
   if numel(x1)<2
       fitted_fall = [];
