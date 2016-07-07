@@ -778,7 +778,8 @@ end
         
         %(TP) Normalized intensity to background and velocities to rise and fall
         cdiff = tracks(kj).meanc_fall - tracks(kj).meanc_rise; 
-        tracks(kj).a_norm = (tracks(kj).A)/cdiff; %normalized background to intensity 
+        %tracks(kj).a_norm = (tracks(kj).A)/cdiff; %normalized background to intensity 
+        tracks(kj).a_norm = ([tracks(kj).A]-min([tracks(kj).A]))/([tracks(kj).maxA]-min([tracks(kj).A]));
         tracks(kj).fall_v = (find(tracks(kj).A(numRise:end)== min(tracks(kj).A(numRise:end))))*0.1; %velocity from peak to lowest point in fall portion
         risemin = find(tracks(kj).A(1:numRise)== min(tracks(kj).A(1:numRise)));
         tracks(kj).rise_v = (find(tracks(kj).A == max(tracks(kj).A)) - (risemin))*0.1 ; %velocity from lowest point to peak in rise portion
