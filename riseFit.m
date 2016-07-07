@@ -7,8 +7,7 @@ function [fitted_rise rgof numRise] = riseFit(track) %(TP) the entire struct of 
   numRise = numel(y1);
 
   ft = fittype( 'exp1' );
-  opts = fitoptions( 'Method', 'NonlinearLeastSquares' );
-  opts.Display = 'final';
+  opts = fitoptions( 'Method', 'NonlinearLeastSquares','Display','off');
 
   if numel(x1)<2
       fitted_rise = [];
