@@ -1,8 +1,8 @@
 % runPuffClassification(data, classifier, varargin) calls puffapy.py to train and test Random Forest Classifier on datasets
 % This function generates the following in the Classification folder of each dataset: 
 %                  processedTracks.npy : all information from processedTracks.mat converted to a NumPy array
-%                  RFclassifier : the Random Forest classifier generated and used
-%                  RFresults.mat : the track indices (corresponds to processedTracks.mat) classified as puffs, nonpuffs and maybes
+%                  RFclassifier : the Random Forest classifier generated (from training set) and used
+%                  RFresults.mat : the track indices classified as puffs, nonpuffs and maybes
 %                  2D,3Dfig.jpg : 2D and 3D (if possible) scatter plots of results               
 %
 % Inputs   
@@ -10,15 +10,20 @@
 %            classifier : filename of classifier (to use if already exists, to save as if it doesn't)   
 %
 % Options ('specifier', value)
-%          'IsTraining' : {true}|false. Tracks file being passed in is used for training
-%           'secondFile' : Name of other tracks file(.mat or .npy). Default: ''
-%                         Used as test set if isTraining == false. 
+%          'IsTraining' : {true}|false. Main processedTracks file is used for training
+%                'File' : Name of main processedTracks file (.mat or .npy). Default: processedTracks.mat from data.source
+%                         Used by default as both the training and test set
+%          'secondFile' : Name of second processedTracks file(.mat or .npy). Default: ''
 %                         Must be full path to the file. 
+%                         If provided, used as test set by default
 %              'Fields' : String of parameters to use for classification separated by spaces. Default: ''
 %                         Required if training set is .mat 
 %           'Overwrite' : true|{false}. Overwrite previous tracking result.
 %
-% Example: runPuffClassification(data, 'RFClassifier', 'IsTraining', false, )
+% Example: runPuffClassification(data, 'RFClassifier', 
+%                                'IsTraining', false, 
+%                                'SecondFile', 'C:\Users\Cell\Ch1\Tracking\ProcessedTracks.mat', 
+%                                'Fields', 'isPuff pallAdiff pfallR2 pvp')
 
 % Francois Aguet, May 2010 (last modified 05/28/2013)
 
