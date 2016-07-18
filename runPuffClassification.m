@@ -74,9 +74,9 @@ end
 
 %Checks if fields are entered in appropriately 
 [~,~,ext] = fileparts(trainPath);
-if ext == '.mat' && isempty(fields)
+if ext == '.mat' & isempty(ip.Results.Fields)
     fields = input('Please enter parameter names to train classifier with, separated by spaces: ' , 's');
-elseif ext == '.npy' && ~isempty(fields)
+elseif ext == '.npy' & ~isempty(ip.Results.Fields)
     fprintf('Classification automatically run based on parameters in the training .npy file');
     fields = ''; 
 else

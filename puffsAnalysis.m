@@ -111,6 +111,6 @@ runPuffTrackProcessing(data, opts{:});
 %-------------------------------------------------------------------------------
 % 4) Classification of tracks using Python 
 %-------------------------------------------------------------------------------
-runPuffClassification(data, 'RF classifier', 'Fields', 'isPuff pallAdiff pfallR2 pip');
+runPuffClassification(data, 'RF classifier', 'Fields', 'isPuff pallAdiff pfallR2 pvp');
 
 res = []; % (ZW) This is a place holder for the return value until we have a runPuffsAnalysis or similar

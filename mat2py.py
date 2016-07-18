@@ -34,7 +34,7 @@ def mat2py(mfilepath, params, savedir):
 		x = np.core.records.fromarrays((np.squeeze(arr)).transpose(), names = ','.join(params))
 		f.close()
 
-		np.save(op.join(savedir, op.splitext(op.basename(path))[0]), x)
+		np.save(op.join(savedir, op.splitext(op.basename(mfilepath))[0]), x)
 		return x
 
 	except OSError:

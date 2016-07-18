@@ -780,36 +780,63 @@ end
     for kj = 1:numel(tracks)
         %(TP)Curve-fitting rise and fall of tracks
         [fitted_rise rgof numRise] = riseFit(tracks(kj));
-        tracks(kj).riseR2 = rgof.rsquare;
-
         [fitted_fall fgof numFall] = fallFit(tracks(kj));
-        tracks(kj).pfallR2 = fgof(1).rsquare; %R2 value for fall portion of track with power fit
-        tracks(kj).efallR2 = fgof(2).rsquare; %R2 value for fall portion of track with exp fit
-
+        tracks(kj).riseR2 = rgof.rsquare; %Exp fit R^2 of rise portion
+        tracks(kj).pfallR2 = fgof(1).rsquare; %Power Fit R^2 of fall portion
+       
+        %(TP)Max intensity and intensity normalized 0-1
+        if any(isnan([tracks(i).A]))
+            tracks(i).A = inpaint_nans([tracks(i).A]);
+        end
+        tracks(kj).maxA = max(tracks(kj).A);
+        tracks(kj).a_norm = ([tracks(kj).A]-min([tracks(kj).A]))/([tracks(kj).maxA]-min([tracks(kj).A]));
+        
+        %(TP)Calculating pvp (% valid points) 
+        [a,~,~,d] = findpeaks(tracks(i).A); 
+        tnpeaks = numel(a);
+        p = findpeaks(tracks(i).A, 'MinPeakProminence', mean(d)); 
+        npeaks = numel(p); 
+        
+        if npeaks == 1 & tnpeaks ==1
+            tracks(kj).pvp = 0;
+        else if isnan(tnpeaks) & isnan(npeaks)
+            tracks(kj).pvp = -1; 
+        else
+            tracks(kj).pvp = npeaks/tnpeaks;
+            end
+        end 
+        
+        %(TP) Calculating diff, to get pallAdiff after 
+        tracks(kj).diff = tracks(kj).maxA - mean(tracks(kj).A); 
+        
         %(TP) Mean background intensity for rise and fall
-        tracks(kj).meanc_rise = mean(tracks(kj).c(1:numRise)); %background values for rise portion of track
-        tracks(kj).meanc_fall = mean(tracks(kj).c(numRise:end)); %background values for fall portion of track
+%         tracks(kj).meanc_rise = mean(tracks(kj).c(1:numRise)); %background values for rise portion of track
+%         tracks(kj).meanc_fall = mean(tracks(kj).c(numRise:end)); %background values for fall portion of track
 
         %(TP) Normalized intensity to background and velocities to rise and fall
-        cdiff = tracks(kj).meanc_fall - tracks(kj).meanc_rise; 
+%         cdiff = tracks(kj).meanc_fall - tracks(kj).meanc_rise; 
         %tracks(kj).a_norm = (tracks(kj).A)/cdiff; %normalized background to intensity 
-        tracks(kj).a_norm = ([tracks(kj).A]-min([tracks(kj).A]))/([tracks(kj).maxA]-min([tracks(kj).A]));
-        cdiff = tracks(kj).meanc_fall - tracks(kj).meanc_rise;
-        tracks(kj).a_norm = (tracks(kj).A)/cdiff; %normalized background to intensity
-        tracks(kj).fall_v = (find(tracks(kj).A(numRise:end)== min(tracks(kj).A(numRise:end))))*0.1; %velocity from peak to lowest point in fall portion
-        risemin = find(tracks(kj).A(1:numRise)== min(tracks(kj).A(1:numRise)));
-        tracks(kj).rise_v = (find(tracks(kj).A == max(tracks(kj).A)) - (risemin))*0.1 ; %velocity from lowest point to peak in rise portion
-
-        %(TP) Max intensity
-        tracks(kj).maxA = max(tracks(kj).A);
+%         tracks(kj).a_norm = ([tracks(kj).A]-min([tracks(kj).A]))/([tracks(kj).maxA]-min([tracks(kj).A]));
+%         cdiff = tracks(kj).meanc_fall - tracks(kj).meanc_rise;
+%         tracks(kj).a_norm = (tracks(kj).A)/cdiff; %normalized background to intensity
+%         tracks(kj).fall_v = (find(tracks(kj).A(numRise:end)== min(tracks(kj).A(numRise:end))))*0.1; %velocity from peak to lowest point in fall portion
+%         risemin = find(tracks(kj).A(1:numRise)== min(tracks(kj).A(1:numRise)));
+%         tracks(kj).rise_v = (find(tracks(kj).A == max(tracks(kj).A)) - (risemin))*0.1 ; %velocity from lowest point to peak in rise portion
 
         %(TP) dependency of rise in background to decrease in intensity
-        tracks(kj).cfcr = max([tracks(kj).c(numRise:end)])- max([tracks(kj).c(1:numRise)]);
-        tracks(kj).aaf = min([tracks(kj).A(numRise:end)]) - tracks(kj).maxA;
-        tracks(kj).atoc = tracks(kj).cfcr/tracks(kj).aaf;
+%         tracks(kj).cfcr = max([tracks(kj).c(numRise:end)])- max([tracks(kj).c(1:numRise)]);
+%         tracks(kj).aaf = min([tracks(kj).A(numRise:end)]) - tracks(kj).maxA;
+%         tracks(kj).atoc = tracks(kj).cfcr/tracks(kj).aaf;
 
         fprintf('\b\b\b\b%3d%%', round(100*kj/numel(tracks)));
     end
+    
+    %(TP) Calculating pallAdiff 
+    maxdiff = max([tracks.diff])
+    mindiff = min([tracks.diff]) 
+    for kj = 1:numel(tracks) 
+        tracks(kj).pallAdiff = ([tracks(kj).diff] - mindiff)/(maxdiff-mindiff);
+    end 
     fprintf('\n');
 
     fprintf('Processing for %s complete - valid/total tracks: %d/%d (%.1f%%).\n',...
