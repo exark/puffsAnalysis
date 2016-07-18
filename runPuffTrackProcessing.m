@@ -146,14 +146,13 @@ end % preprocess
 % Set up track structure
 tracks(1:nTracks) = struct('t', [], 'f', [],...
     'x', [], 'y', [], 'A', [], 'maxA', [],...
-    'c', [], 'meanc_fall',[],'meanc_rise',[], 'a_norm', [],...
+    'c',[], 'a_norm', [],...
     'x_pstd', [], 'y_pstd', [], 'A_pstd', [], 'c_pstd', [],...
     'sigma_r', [], 'SE_sigma_r', [],...
     'isPSF', [],'visibility', [], 'lifetime_s', [], 'start', [], 'end', [],...
     'startBuffer', [], 'endBuffer', [], 'MotionAnalysis', [],...
     'cks', [], 'maskN',[], 'mask_Ar',[],...
-    'riseR2', [], 'pfallR2', [], 'efallR2', [], 'rise_v', [], 'fall_v', [],...
-    'cfcr',[],'aaf',[],'atoc',[],...
+    'riseR2', [], 'pfallR2', [], 'pvp', [], 'pallAdiff',[],...
     'isPuff', [0]);
     %(TP):
     % meanc_fall and _rise are the average background intensities for the fall and rise portions
@@ -785,21 +784,21 @@ end
         tracks(kj).pfallR2 = fgof(1).rsquare; %Power Fit R^2 of fall portion
        
         %(TP)Max intensity and intensity normalized 0-1
-        if any(isnan([tracks(i).A]))
-            tracks(i).A = inpaint_nans([tracks(i).A]);
+        if any(isnan([tracks(kj).A]))
+            tracks(kj).A = inpaint_nans([tracks(kj).A]);
         end
-        tracks(kj).maxA = max(tracks(kj).A);
+        tracks(kj).maxA = max([tracks(kj).A]);
         tracks(kj).a_norm = ([tracks(kj).A]-min([tracks(kj).A]))/([tracks(kj).maxA]-min([tracks(kj).A]));
         
         %(TP)Calculating pvp (% valid points) 
-        [a,~,~,d] = findpeaks(tracks(i).A); 
+        [a,~,~,d] = findpeaks(tracks(kj).A); 
         tnpeaks = numel(a);
-        p = findpeaks(tracks(i).A, 'MinPeakProminence', mean(d)); 
+        p = findpeaks(tracks(kj).A, 'MinPeakProminence', mean(d)); 
         npeaks = numel(p); 
         
         if npeaks == 1 & tnpeaks ==1
             tracks(kj).pvp = 0;
-        else if isnan(tnpeaks) & isnan(npeaks)
+        else if tnpeaks == 0 & npeaks == 0
             tracks(kj).pvp = -1; 
         else
             tracks(kj).pvp = npeaks/tnpeaks;
@@ -807,7 +806,7 @@ end
         end 
         
         %(TP) Calculating diff, to get pallAdiff after 
-        tracks(kj).diff = tracks(kj).maxA - mean(tracks(kj).A); 
+        tracks(kj).diff = tracks(kj).maxA - mean([tracks(kj).A]); 
         
         %(TP) Mean background intensity for rise and fall
 %         tracks(kj).meanc_rise = mean(tracks(kj).c(1:numRise)); %background values for rise portion of track
@@ -832,8 +831,8 @@ end
     end
     
     %(TP) Calculating pallAdiff 
-    maxdiff = max([tracks.diff])
-    mindiff = min([tracks.diff]) 
+    maxdiff = max([tracks.diff]);
+    mindiff = min([tracks.diff]); 
     for kj = 1:numel(tracks) 
         tracks(kj).pallAdiff = ([tracks(kj).diff] - mindiff)/(maxdiff-mindiff);
     end 

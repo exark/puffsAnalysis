@@ -11,7 +11,7 @@ from mat2py import mat2py
 
 # Assumes first parameter passed is always the target variable
 # and sorts between train and test arrays based on that
-def runRandomForests(train, test, RFfile):
+def runRandomForests(train, test, RFfile, savedir):
 
 	# Add the track to training data train_tracks if its been scored
 	train_tracks = []
@@ -85,7 +85,7 @@ def runRandomForests(train, test, RFfile):
 
 	# Save dictionary as a .mat
 	#change where this is saved, should be saved to classification folder
-	sio.savemat(op.join(op.dirname(RFfile),'RFresults'), idx)
+	sio.savemat(op.join(savedir,'RFresults'), idx)
 
 	return nonpuffs[1:], puffs[1:], maybe[1:]
 

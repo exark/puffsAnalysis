@@ -11,15 +11,14 @@
 %
 % Options ('specifier', value)
 %          'IsTraining' : {true}|false. Tracks file being passed in is used for training
-%           'File'      : Name of tracks file present in currentdir(.mat or .npy). Default: ProcessedTracks.mat
-%           'OtherFile' : Name of other tracks file(.mat or .npy). Default: ''
+%           'secondFile' : Name of other tracks file(.mat or .npy). Default: ''
 %                         Used as test set if isTraining == false. 
 %                         Must be full path to the file. 
 %              'Fields' : String of parameters to use for classification separated by spaces. Default: ''
 %                         Required if training set is .mat 
 %           'Overwrite' : true|{false}. Overwrite previous tracking result.
 %
-% Example: runPuffClassification(data, 'RFClassifier', 'IsTraining', false, 'TrainData', 'C:\User\test.mat',  ) ;
+% Example: runPuffClassification(data, 'RFClassifier', 'IsTraining', false, )
 
 % Francois Aguet, May 2010 (last modified 05/28/2013)
 
@@ -31,16 +30,16 @@ ip.addRequired('data', @isstruct);
 ip.addRequired('classifier', @ischar);
 ip.addParamValue('IsTraining', true, @islogical);
 ip.addParamValue('File', 'ProcessedTracks.mat', @ischar); 
-ip.addParamValue('OtherFile', '', @ischar);
+ip.addParamValue('SecondFile', '', @ischar);
 ip.addParamValue('Fields', '', @ischar);
 ip.addParamValue('RelativePath', 'Tracking', @ischar);
-ip.addParamValue('Overwrite', true, @islogical); % ADD THIS FUNCTIONALITY 
+%ip.addParamValue('Overwrite', true, @islogical); % ADD THIS FUNCTIONALITY 
 %ADD IN PARFOR
 
 ip.parse(data, classifier, varargin{:});
 isTraining = ip.Results.IsTraining; 
 rPath = ip.Results.RelativePath;
-otherFile = ip.Results.OtherFile; 
+secondFile = ip.Results.SecondFile; 
 file = ip.Results.File;
 
 % Set the file paths of training and test sets
@@ -49,23 +48,23 @@ if ext == '.npy'
     rPath = 'Classification';
 end 
 
-tPath = [data.source filesep rPath filesep file];
+tPath = [data.source rPath filesep file];
 if isTraining && exist(tPath, 'file')==2
     trainPath = tPath;
-    if ~isempty(otherFile) && exist(otherFile, 'file')==2
-        testpath = ['--testing ' '"' otherFile '"'];
+    if ~isempty(secondFile) && exist(secondFile, 'file')==2
+        testpath = ['--testing ' '"' secondFile '"'];
     else
-        testPath = otherFile;
+        testPath = secondFile;
     end 
 elseif ~isTraining && exist(tPath, 'file')==2
     testPath = ['--testing ' '"' tPath '"'];
-    if isempty(otherFile) 
+    if isempty(secondFile) 
         trainPath = input('Please enter full path name of tracks to be used for training: ', 's');
-    elseif ~isempty(otherFile) && ~exist(otherFile, 'file')==2
-        fprintf([otherFile ' does not exist.']);
+    elseif ~isempty(secondFile) && ~exist(secondFile, 'file')==2
+        fprintf([secondFile ' does not exist.']);
         trainPath = input('Please enter correct full path name of tracks to be used for training: ', 's')
     else
-        trainPath = otherFile;
+        trainPath = secondFile;
     end 
 else 
     fprintf([file ' does not exist in that directory']);
@@ -75,12 +74,14 @@ end
 %Checks if fields are entered in appropriately 
 [~,~,ext] = fileparts(trainPath);
 if ext == '.mat' & isempty(ip.Results.Fields)
-    fields = input('Please enter parameter names to train classifier with, separated by spaces: ' , 's');
+    fields = input('\n Please enter parameter names to train classifier with, separated by spaces: ' , 's');
+    fields = ['--fields ' fields];
 elseif ext == '.npy' & ~isempty(ip.Results.Fields)
-    fprintf('Classification automatically run based on parameters in the training .npy file');
+    fprintf('\n Classification automatically run based on fields in the training .npy file, not the fields entered.');
     fields = ''; 
 else
     fields = ip.Results.Fields; 
+    fields = ['--fields ' fields];
 end 
 
 %Make classification folder if it doesn't already exist
@@ -88,13 +89,20 @@ if ~(exist([data.source 'Classification'], 'dir')==7)
     mkdir([data.source 'Classification']);
 end
 
+classifierDir = data.source;
+if ~isTraining 
+    classifierDir = fileparts(fileparts(secondFile));
+    if ~(exist([classifierDir filesep 'Classification'], 'dir')==7)
+        mkdir([classifierDir filesep 'Classification']);
+    end
+end
+
 %Properly formats inputs for command prompt
-classifierPath = ['"' data.source filesep 'Classification' filesep classifier '"'];
+classifierPath = ['"' classifierDir filesep 'Classification' filesep classifier '"'];
 trainPath = ['"' trainPath '"'];
-fields = ['--fields ' fields];
 puffapy = ['"' which('puffapy.py') '"'];
 
 %Call command prompt to run puffapy.py
 systemCommand = strjoin({'python' puffapy classifierPath trainPath fields testPath}, ' ');
-fprintf('Random Forest Classification is running...');
+fprintf('\n Random Forest Classification is running...');
 system(systemCommand);

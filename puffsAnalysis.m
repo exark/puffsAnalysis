@@ -106,11 +106,11 @@ runTracking(data, settings, opts{:});
 %-------------------------------------------------------------------------------
 % 3) Track processing
 %-------------------------------------------------------------------------------
-runPuffTrackProcessing(data, opts{:});
+runPuffTrackProcessing(data, 'Overwrite', true);
 
 %-------------------------------------------------------------------------------
 % 4) Classification of tracks using Python 
 %-------------------------------------------------------------------------------
-runPuffClassification(data, 'RF classifier', 'Fields', 'isPuff pallAdiff pfallR2 pvp');
+runPuffClassification(data, 'RF classifier', 'IsTraining', false, 'SecondFile', 'C:\Users\tiffany\Downloads\[RunX]SpH MOR example puff movie\Cell1_0.1s\Ch1\Classification\processedTracks.mat', 'Fields', 'isPuff pallAdiff pfallR2 pvp');
 
 res = []; % (ZW) This is a place holder for the return value until we have a runPuffsAnalysis or similar

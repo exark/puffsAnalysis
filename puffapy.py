@@ -12,6 +12,10 @@ if __name__ == "__main__":
 	parser.add_argument('--fields', default = [], nargs="+", help="Field(s) to extract from .mat file")
 	parser.add_argument('--testing', dest='testing',default=[])
 	args = parser.parse_args()
+ 
+	testdir = op.join(op.dirname(op.dirname(args.testing)),'Classification')
+	traindir = op.join(op.dirname(op.dirname(args.training)),'Classification')
+	savedir = traindir
 
 	if (args.training).endswith('.npy'):
 		train = np.load(args.training)
@@ -22,18 +26,21 @@ if __name__ == "__main__":
 			quit()
 		else: 
 			fields = args.fields
-		train = mat2py(args.training, fields, op.dirname(args.RFfile))
+		train = mat2py(args.training, fields, traindir)
 
 	if args.testing:
 		if (args.testing).endswith('.npy'):
 			test = np.load(args.testing)
 		else:
-			test = mat2py(args.testing, fields, op.dirname(args.RFfile))
+			test = mat2py(args.testing, fields, testdir)
+		savedir = testdir
 	else:
 		test = np.array(train)
 
 	train = np.array(train.tolist())
 	test = np.array(test.tolist())
 
-	nonpuffs, puffs, maybe = runRandomForests(train, test, args.RFfile)
-	plotRandomForests(nonpuffs, puffs, maybe, fields[1:], op.dirname(args.RFfile))
+	
+
+	nonpuffs, puffs, maybe = runRandomForests(train, test, args.RFfile, savedir)
+	plotRandomForests(nonpuffs, puffs, maybe, fields[1:], savedir)
