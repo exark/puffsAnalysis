@@ -13,14 +13,14 @@ def plotRandomForests(nonpuffs, puffs, maybe, pnames, savedir, p2D = [0,1], save
 		if isinstance(p2D[0], str): 
 			for i, pname in enumerate(p2D): 
 				if not pname in pnames: 
-					raise ValueError('Parameter'+ ' \'' + pname + '\' ''does not exist for plotting')
+					raise ValueError('Parameter' + '\'pname \'' + 'does not exist for plotting')
 				else: 
 					p2D[i] = pnames.index(p2D[i])
 	
 		if isinstance(p3D[0], str):  
 			for i,pname in enumerate(p3D): 
 				if not pname in pnames: 
-					raise ValueError('Parameter'+ ' \'' + pname + '\' ''does not exist for plotting')
+					raise ValueError('Parameter' + '\'pname \'' + 'does not exist for plotting')
 				else: 
 					p3D[i] = pnames.index(p3D[i])
 
@@ -32,7 +32,6 @@ def plotRandomForests(nonpuffs, puffs, maybe, pnames, savedir, p2D = [0,1], save
 		plt.ylabel(pnames[p2D[1]])
 		plt.title('2D Scatter Plot for RF Results')
 		plt.legend()
-		#change save location to classification folder
 		plt.savefig(op.join(savedir,save2D))
 
 		if len(pnames) > 2:
@@ -48,7 +47,6 @@ def plotRandomForests(nonpuffs, puffs, maybe, pnames, savedir, p2D = [0,1], save
 			ax.set_xlabel(pnames[p3D[0]])
 			ax.set_ylabel(pnames[p3D[1]])
 			ax.set_zlabel(pnames[p3D[2]])
-			#change save location to classification folder 
 			plt.savefig(op.join(savedir,save3D))
 
 		plt.show()

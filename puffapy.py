@@ -40,7 +40,5 @@ if __name__ == "__main__":
 	train = np.array(train.tolist())
 	test = np.array(test.tolist())
 
-	
-
 	nonpuffs, puffs, maybe = runRandomForests(train, test, args.RFfile, savedir)
 	plotRandomForests(nonpuffs, puffs, maybe, fields[1:], savedir)
