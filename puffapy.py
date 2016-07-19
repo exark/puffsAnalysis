@@ -1,9 +1,10 @@
-from mat2py import mat2py
-from runRandomForests import runRandomForests
-from plotRandomForests import plotRandomForests
 import argparse
 import os.path as op
 import numpy as np
+
+from mat2py import mat2py
+from runRandomForests import runRandomForests
+from plotRandomForests import plotRandomForests
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Random Forest classification of tracks')
@@ -40,5 +41,17 @@ if __name__ == "__main__":
 	train = np.array(train.tolist())
 	test = np.array(test.tolist())
 
-	nonpuffs, puffs, maybe = runRandomForests(train, test, args.RFfile, savedir)
+	nonpuffs, puffs, maybe, ntracks = runRandomForests(train, test, args.RFfile, savedir)
+
+	n = open(op.join(savedir, 'notes.txt'), 'a')
+	n.write('\n Classifier built from: ' + args.training)
+	n.write('\n Params used: ' + ', '.join(fields[1:]))
+	n.write('\n Puffs/Total: ' + str(ntracks[2]) + '/' + str(ntracks[0]) + ' (' + str((ntracks[2]/ntracks[0]) *100) + '%)')
+	n.write('\n Nonpuffs/Total: ' + str(ntracks[1]) + '/' + str(ntracks[0]) + ' (' + str((ntracks[1]/ntracks[0]) *100) + '%)')
+	n.write('\n Maybe/Total: ' + str(ntracks[3]) + '/' + str(ntracks[0]) + ' (' + str((ntracks[3]/ntracks[0]) *100) + '%)\n')
+	n.close()
+
 	plotRandomForests(nonpuffs, puffs, maybe, fields[1:], savedir)
+
+	
+
