@@ -71,7 +71,7 @@ if isTraining && exist(filePath, 'file')==2
     elseif ~isempty(secondFile) && ~exist(secondFile, 'file')==2
         testPath = input('\n Path to second file does not exist. Please enter correct path for testing: ', 's');
     else
-        testPath = filePath;
+        testPath = '';
     end 
 elseif ~isTraining && exist(filePath, 'file')==2
     testPath = filePath;
