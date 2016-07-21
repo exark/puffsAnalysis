@@ -131,4 +131,5 @@ end
 
 %Call command prompt to run puffapy.py
 systemCommand = strjoin({'python' puffapy classifierPath trainPath fields testPath}, ' ');
+systemCommand
 system(systemCommand);

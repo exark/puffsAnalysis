@@ -51,7 +51,7 @@ if __name__ == "__main__":
 	n.write('\n Maybe/Total: ' + str(ntracks[3]) + '/' + str(ntracks[0]) + ' (' + str((ntracks[3]/ntracks[0]) *100) + '%)\n')
 	n.close()
 
-	plotRandomForests(nonpuffs, puffs, maybe, fields[1:], savedir)
+	plotRandomForests(nonpuffs, puffs, maybe, fields[1:], savedir, p2D=[2,0])
 
 	
 
