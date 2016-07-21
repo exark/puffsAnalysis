@@ -1,4 +1,12 @@
-function isPuff = puffScorer(data, oldIsPuff)
+function isPuff = puffScorer(data, oldIsPuff, varargin)
+
+if ~isempty(varargin)
+    cmp = varargin{1};
+    cmp = strcmp('compare',cmp);
+    if cmp
+        disp('You said compare, but that aint implemented yet');
+    end
+end
 
 handles.data = data;
 
@@ -229,7 +237,7 @@ gax = axes('Parent', gph, 'Box', 'on', 'Units', 'pixels');
 
 montph = uipanel('Parent', hfig, 'Units', 'pixels', 'Title', ['Montage'],...
              'Position', [pos(3)/2 0 pos(3)/2 pos(4)]);
-
+         
 if isempty(oldIsPuff)
   isPuff = nan(numel(tracks),1);
 else
@@ -241,7 +249,13 @@ refreshTrack();
 % Helper functions:
 %======================================
 function quitCallback(varargin)
-    assignin('base','isPuff',isPuff);
+    assignin('base','isPuffNew',isPuff);
+    if evalin('base','length(find(~isnan(isPuffNew))) > length(find(~isnan(isPuff)))')
+        disp('Saving over old isPuff');
+        assignin('base','isPuff',isPuff);
+    else
+        disp('isPuff in base workspace appears newer, saving as isPuffNew only.');
+    end
     delete(gcf);
     return;
 end
@@ -274,9 +288,9 @@ function noCallback(varargin)
 end
 
 function isPuffResult = returnResults(tn, res, isPuffBefore)
-    disp(['Track ' num2str(tn) ' = ' num2str(res)]);
     isPuffBefore(tn) = res;
     isPuffResult = isPuffBefore;
+    disp(['Track ' num2str(tn) ' = ' num2str(res) ' (Scored ' num2str(length(find(~isnan(isPuffResult)))) '/' num2str(length(isPuffResult))]);
 end
 
 function plotTrackMontageLocal(track, trackStack, xa, ya, ph, width, labels)
