@@ -147,12 +147,15 @@ end % preprocess
 tracks(1:nTracks) = struct('t', [], 'f', [],...
     'x', [], 'y', [], 'A', [], 'maxA', [],...
     'c',[], 'a_norm', [],...
+    'Ac', [], 'maxAc',[], 'Ac_norm', [],...
     'x_pstd', [], 'y_pstd', [], 'A_pstd', [], 'c_pstd', [],...
     'sigma_r', [], 'SE_sigma_r', [],...
     'isPSF', [],'visibility', [], 'lifetime_s', [], 'start', [], 'end', [],...
     'startBuffer', [], 'endBuffer', [], 'MotionAnalysis', [],...
     'maskN',[], 'mask_Ar',[],...
-    'riseR2', [], 'pfallR2', [], 'pvp', [], 'pallAdiff',[],...
+    'riseR2', [], 'pfallR2', [], 'pvp', [],...
+    'pallAcdiff',[], 'diff', [],...
+    'npeaks', [], 'tnpeaks', [],...
     'isPuff', [0]);
     %(TP):
     % meanc_fall and _rise are the average background intensities for the fall and rise portions
@@ -307,18 +310,18 @@ buffer(rmlt,:) = [];
 
 %(ZYW) Remove all tracks that start in first frame and have peak amplitude
 % in first frame of track.
-rmft = [];
-for i=1:numel(tracks)
-  ampl = tracks(i).A + tracks(i).c;
-  if tracks(i).start == 1
-    [~, ii] = max(ampl);
-    if ii == 1
-      rmft = [rmft i];
-    end
-  end
-end
-tracks(rmft) = [];
-buffer(rmft,:) = [];
+% rmft = [];
+% for i=1:numel(tracks)
+%   ampl = tracks(i).A + tracks(i).c;
+%   if tracks(i).start == 1
+%     [~, ii] = max(ampl);
+%     if ii == 1
+%       rmft = [rmft i];
+%     end
+%   end
+% end
+% tracks(rmft) = [];
+% buffer(rmft,:) = [];
 
 % remove tracks that fall into image boundary
 minx = round(arrayfun(@(t) min(t.x(:)), tracks));
@@ -777,36 +780,41 @@ end
     % (ZYW) Once all categorization has been completed, loop through tracks and calculate Rsquared values
     fprintf('Processing tracks (%s) - fitting attack and decay functions:     ', getShortPath(data));
     for kj = 1:numel(tracks)
-        %(TP)Curve-fitting rise and fall of tracks
-        [fitted_rise rgof numRise] = riseFit(tracks(kj));
-        [fitted_fall fgof numFall] = fallFit(tracks(kj));
-        tracks(kj).riseR2 = rgof.rsquare; %Exp fit R^2 of rise portion
-        tracks(kj).pfallR2 = fgof.rsquare; %Power Fit R^2 of fall portion
-       
-        %(TP)Max intensity and intensity normalized 0-1
         if any(isnan([tracks(kj).A]))
             tracks(kj).A = inpaint_nans([tracks(kj).A]);
         end
-        tracks(kj).maxA = max([tracks(kj).A]);
-        tracks(kj).a_norm = ([tracks(kj).A]-min([tracks(kj).A]))/([tracks(kj).maxA]-min([tracks(kj).A]));
+        if any(isnan([tracks(kj).c]))
+            tracks(kj).c = inpaint_nans([tracks(kj).c]);
+        end
+        
+        %(TP)Curve-fitting rise and fall of tracks
+        %[fitted_rise rgof numRise] = riseFit(tracks(kj));
+        [fitted_fall fgof numFall] = fallFit(tracks(kj));
+        %tracks(kj).riseR2 = rgof.rsquare; %Exp fit R^2 of rise portion
+        tracks(kj).pfallR2 = fgof.rsquare; %Power Fit R^2 of fall portion
+       
+        %(TP)Max intensity and intensity normalized 0-1
+        tracks(kj).Ac = [tracks(kj).A] + [tracks(kj).c];
+        tracks(kj).maxAc = max([tracks(kj).Ac]);
+        tracks(kj).Ac_norm = ([tracks(kj).Ac]-min([tracks(kj).Ac]))/([tracks(kj).maxAc]-min([tracks(kj).Ac]));
         
         %(TP)Calculating pvp (% valid points) 
-        [a,~,~,d] = findpeaks(tracks(kj).A); 
-        tnpeaks = numel(a);
-        p = findpeaks(tracks(kj).A, 'MinPeakProminence', mean(d)); 
-        npeaks = numel(p); 
+        [a,~,~,d] = findpeaks(tracks(kj).Ac); 
+        tracks(kj).tnpeaks = numel(a);
+        p = findpeaks(tracks(kj).Ac, 'MinPeakProminence', mean(d)); 
+        tracks(kj).npeaks = numel(p); 
         
-        if npeaks == 1 & tnpeaks ==1
+        if tracks(kj).npeaks == 1 & tracks(kj).tnpeaks ==1
             tracks(kj).pvp = 0;
-        else if tnpeaks == 0 & npeaks == 0
+        else if tracks(kj).tnpeaks == 0 & tracks(kj).npeaks == 0
             tracks(kj).pvp = -1; 
         else
-            tracks(kj).pvp = npeaks/tnpeaks;
+            tracks(kj).pvp = tracks(kj).npeaks/tracks(kj).tnpeaks;
             end
         end 
         
         %(TP) Calculating diff, to get pallAdiff after 
-        tracks(kj).diff = tracks(kj).maxA - mean([tracks(kj).A]); 
+        tracks(kj).diff = tracks(kj).maxAc - mean([tracks(kj).Ac]); 
         
         %(TP) Mean background intensity for rise and fall
 %         tracks(kj).meanc_rise = mean(tracks(kj).c(1:numRise)); %background values for rise portion of track
@@ -834,10 +842,10 @@ end
     maxdiff = max([tracks.diff]);
     mindiff = min([tracks.diff]); 
     for kj = 1:numel(tracks) 
-        tracks(kj).pallAdiff = ([tracks(kj).diff] - mindiff)/(maxdiff-mindiff);
+        tracks(kj).pallAcdiff = ([tracks(kj).diff] - mindiff)/(maxdiff-mindiff);
     end 
     fprintf('\n');
-
+    
     fprintf('Processing for %s complete - valid/total tracks: %d/%d (%.1f%%).\n',...
         getShortPath(data), sum([tracks.catIdx]==1), numel(tracks), sum([tracks.catIdx]==1)/numel(tracks)*100);
 
