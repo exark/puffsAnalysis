@@ -21,10 +21,8 @@ def runRandomForests(train, test, RFfile, savedir):
 	for feature in train:
 		if feature[0] != 0.:
 			train_tracks.append(feature)
-
 	train_tracks = np.array(train_tracks)
 	test_tracks = np.array(test)
-
 	# Gets parameter values for training data
 	trainArr = train_tracks[:,1:]
 

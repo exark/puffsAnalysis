@@ -44,7 +44,7 @@ def plotRandomForests(nonpuffs, puffs, maybe, pnames, savedir, p2D = [0,1], save
 		plt.xlabel(pnames[p2D[0]])
 		plt.ylabel(pnames[p2D[1]])
 		plt.title('2D Scatter Plot for RF Results')
-		plt.legend()
+		plt.legend(bbox_to_anchor = (1.13, 1.1), numpoints = 1, fontsize = 'small')
 		plt.savefig(op.join(savedir,save2D))
 
 		if len(pnames) > 2:
@@ -52,15 +52,16 @@ def plotRandomForests(nonpuffs, puffs, maybe, pnames, savedir, p2D = [0,1], save
 			fig = plt.figure()
 			ax = fig.add_subplot(111,projection='3d')
 
-			for c, m, xs, ys, zs in [ ('c', 'o', nonpuffs[p3D[0]], nonpuffs[p3D[1]],nonpuffs[p3D[2]]),
-			('g', 'o', maybe[p3D[0]], maybe[p3D[1]],maybe[p3D[2]]),
-			('r','o', puffs[p3D[0]],puffs[p3D[1]],puffs[p3D[2]]),]:
-				ax.scatter(xs,ys,zs,c=c, marker = m)
+			for c, m, l, xs, ys, zs in [ ('c', 'o', 'Nonpuffs', nonpuffs[p3D[0]], nonpuffs[p3D[1]],nonpuffs[p3D[2]]),
+			('g', 'o', 'Maybe', maybe[p3D[0]], maybe[p3D[1]],maybe[p3D[2]]),
+			('r','o', 'Puffs', puffs[p3D[0]],puffs[p3D[1]],puffs[p3D[2]]),]:
+				ax.scatter(xs,ys,zs,c=c, marker = m, label = l)
 
-			ax.set_xlabel(pnames[p3D[0]])
-			ax.set_ylabel(pnames[p3D[1]])
-			ax.set_zlabel(pnames[p3D[2]])
+			ax.set_xlabel(pnames[p3D[0]], labelpad = 10)
+			ax.set_ylabel(pnames[p3D[1]], labelpad = 12)
+			ax.set_zlabel(pnames[p3D[2]], labelpad = 6)
 			ax.set_title('3D Scatter Plot for RF Results')
+			plt.legend(bbox_to_anchor = (0.1, 1.05), scatterpoints = 1, fontsize = 'small')
 			plt.savefig(op.join(savedir,save3D))
 
 		plt.show()

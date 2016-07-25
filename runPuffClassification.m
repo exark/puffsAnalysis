@@ -16,7 +16,7 @@
 %          'IsTraining' : {true}|false. Main processedTracks file is used for training
 %                'File' : Name of processedTracks file (.mat or .npy) from data.source. Default: processedTracks.mat 
 %                         Used by default as both the training and test set
-%          'secondFile' : Name of second processedTracks file(.mat or .npy). Default: ''
+%          'SecondFile' : Name of second processedTracks file(.mat or .npy). Default: ''
 %                         Must be full path to the file. 
 %                         If provided, used as test set by default
 %              'Fields' : String of parameters to use for classification separated by spaces. Default: ''

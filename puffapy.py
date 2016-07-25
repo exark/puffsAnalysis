@@ -14,7 +14,6 @@ if __name__ == "__main__":
 	parser.add_argument('--testing', dest='testing',default=[])
 	args = parser.parse_args()
  
-	testdir = op.join(op.dirname(op.dirname(args.testing)),'Classification')
 	traindir = op.join(op.dirname(op.dirname(args.training)),'Classification')
 	savedir = traindir
 
@@ -30,6 +29,7 @@ if __name__ == "__main__":
 		train = mat2py(args.training, fields, traindir)
 
 	if args.testing:
+		testdir = op.join(op.dirname(op.dirname(args.testing)),'Classification')
 		if (args.testing).endswith('.npy'):
 			test = np.load(args.testing)
 		else:
@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
 	nonpuffs, puffs, maybe, ntracks = runRandomForests(train, test, args.RFfile, savedir)
 
-	n = open(op.join(savedir, 'notes.txt'), 'a')
+	n = open(op.join(savedir, 'notes.txt'), 'w')
 	n.write('\n Classifier built from: ' + args.training)
 	n.write('\n Params used: ' + ', '.join(fields[1:]))
 	n.write('\n Puffs/Total: ' + str(ntracks[2]) + '/' + str(ntracks[0]) + ' (' + str((ntracks[2]/ntracks[0]) *100) + '%)')
