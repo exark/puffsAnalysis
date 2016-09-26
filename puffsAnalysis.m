@@ -58,11 +58,8 @@
 
 % Classification: 
 % ----------------------------
-% 1) Through much experimentation, we found that classification with parameters pallAdiff, pfallR2, pvp, tnpeaks and npeaks yielded 
-% best results and strongly recommend staying with these to build the classifier. 
-% 2) The classification code was written using Python 3.5 and many of Python's additional libraries. 
+%  The classification code was written using Python 3.5 and many of Python's additional libraries. 
 %    Download the Anaconda distribution of Python to ensure that that your machine has all the necessary packages. 
-% 3) .mat 
 
 % Francois Aguet (last mod. 05/29/2013)
 

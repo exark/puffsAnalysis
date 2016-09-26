@@ -153,10 +153,10 @@ tracks(1:nTracks) = struct('t', [], 'f', [],...
     'isPSF', [],'visibility', [], 'lifetime_s', [], 'start', [], 'end', [],...
     'startBuffer', [], 'endBuffer', [], 'MotionAnalysis', [],...
     'maskN',[], 'mask_Ar',[],...
-    'riseR2', [], 'pfallR2', [], 'pvp', [],...
-    'pallAcdiff',[], 'diff', [],...
-    'npeaks', [], 'tnpeaks', [],...
-    'isPuff', [0]);
+    'pfallR2', [], 'percentC', [],...
+    'pallAcdiff',[], 'diff', [], 'cdiff', [],...
+    'npeaks', [], 'tnpeaks', [], 'pvp', [],...
+    'hpeaks', [], 'php', [],'isPuff', [0]);
     %(TP):
     % meanc_fall and _rise are the average background intensities for the fall and rise portions
     % a_norm is the intensity normalized to background
@@ -787,57 +787,62 @@ end
             tracks(kj).c = inpaint_nans([tracks(kj).c]);
         end
 
-        %(TP)Curve-fitting rise and fall of tracks
-        %[fitted_rise rgof numRise] = riseFit(tracks(kj));
         [fitted_fall fgof numFall] = fallFit(tracks(kj));
-        %tracks(kj).riseR2 = rgof.rsquare; %Exp fit R^2 of rise portion
         tracks(kj).pfallR2 = fgof.rsquare; %Power Fit R^2 of fall portion
 
-        %(TP)Max intensity and intensity normalized 0-1
+        %(TP)Max amplitude and amplitude normalized 0-1
         tracks(kj).Ac = [tracks(kj).A] + [tracks(kj).c];
         tracks(kj).maxAc = max([tracks(kj).Ac]);
         tracks(kj).Ac_norm = ([tracks(kj).Ac]-min([tracks(kj).Ac]))/([tracks(kj).maxAc]-min([tracks(kj).Ac]));
 
-        %(TP)Calculating pvp (% valid points)
+        %(TP)Calculating tnpeaks, npeaks, pvp (% valid points)
         [a,~,~,d] = findpeaks(tracks(kj).Ac);
         tracks(kj).tnpeaks = numel(a);
-        p = findpeaks(tracks(kj).Ac, 'MinPeakProminence', mean(d));
-        tracks(kj).npeaks = numel(p);
-
-        if tracks(kj).npeaks == 1 & tracks(kj).tnpeaks ==1
+        p = findpeaks(tracks(kj).Ac, 'MinPeakProminence', mean(d)); 
+        tracks(kj).npeaks = numel(p); 
+        
+        if tracks(kj).npeaks == 1 & tracks(kj).tnpeaks == 1
             tracks(kj).pvp = 0;
-        else if tracks(kj).tnpeaks == 0 & tracks(kj).npeaks == 0
-            tracks(kj).pvp = -1;
+        elseif tracks(kj).tnpeaks == 0 
+            tracks(kj).pvp = 0;
         else
             tracks(kj).pvp = tracks(kj).npeaks/tracks(kj).tnpeaks;
+        end
+        
+        %(TP) Calculating hpeaks, php
+        if tracks(i).tnpeaks == 0
+            tracks(i).php = 0;
+            tracks(i).hpeaks = 0;
+        else
+            [m,j] = max([tracks(i).Ac]);
+            p = findpeaks(tracks(i).Ac, 'MinPeakHeight', m*0.5);
+            tracks(i).hpeaks = numel(p)-1; %not including max
+            tracks(i).php = tracks(i).hpeaks/tracks(i).tnpeaks;
+        end
+        
+        %(TP) cdiff: compares background after the max to background before
+        %the max
+        maxIdx = find([tracks(i).Ac] == max([tracks(i).Ac]));
+        if maxIdx == numel([tracks(i).Ac])
+            tracks(i).cdiff = (tracks(i).c(maxIdx) - mean([tracks(i).c(1:maxIdx-1)]))/max(tracks(i).c);
+        else
+            maxc = find([tracks(i).c] == max([tracks(i).c(maxIdx+1:end)]), 1, 'last');
+            if maxIdx == 1
+                tracks(i).cdiff = (tracks(i).c(maxc) - [tracks(i).c(maxIdx)])/max(tracks(i).c);
+            else 
+                tracks(i).cdiff = (tracks(i).c(maxc) - mean([tracks(i).c(1:maxIdx-1)]))/max(tracks(i).c);
             end
         end
-
-        %(TP) Calculating diff, to get pallAdiff after
-        tracks(kj).diff = tracks(kj).maxAc - mean([tracks(kj).Ac]);
-
-        %(TP) Mean background intensity for rise and fall
-%         tracks(kj).meanc_rise = mean(tracks(kj).c(1:numRise)); %background values for rise portion of track
-%         tracks(kj).meanc_fall = mean(tracks(kj).c(numRise:end)); %background values for fall portion of track
-
-        %(TP) Normalized intensity to background and velocities to rise and fall
-%         cdiff = tracks(kj).meanc_fall - tracks(kj).meanc_rise;
-        %tracks(kj).a_norm = (tracks(kj).A)/cdiff; %normalized background to intensity
-%         tracks(kj).a_norm = ([tracks(kj).A]-min([tracks(kj).A]))/([tracks(kj).maxA]-min([tracks(kj).A]));
-%         cdiff = tracks(kj).meanc_fall - tracks(kj).meanc_rise;
-%         tracks(kj).a_norm = (tracks(kj).A)/cdiff; %normalized background to intensity
-%         tracks(kj).fall_v = (find(tracks(kj).A(numRise:end)== min(tracks(kj).A(numRise:end))))*0.1; %velocity from peak to lowest point in fall portion
-%         risemin = find(tracks(kj).A(1:numRise)== min(tracks(kj).A(1:numRise)));
-%         tracks(kj).rise_v = (find(tracks(kj).A == max(tracks(kj).A)) - (risemin))*0.1 ; %velocity from lowest point to peak in rise portion
-
-        %(TP) dependency of rise in background to decrease in intensity
-%         tracks(kj).cfcr = max([tracks(kj).c(numRise:end)])- max([tracks(kj).c(1:numRise)]);
-%         tracks(kj).aaf = min([tracks(kj).A(numRise:end)]) - tracks(kj).maxA;
-%         tracks(kj).atoc = tracks(kj).cfcr/tracks(kj).aaf;
-
+        
+        %(TP) to filter out low SNR tracks
+        tracks(i).percentC = (mean([tracks(i).c]))/(mean([tracks(i).Ac]));
+        
+        %(TP) Calculating diff, to get pallAdiff after 
+        tracks(kj).diff = tracks(kj).maxAc - mean([tracks(kj).Ac]); 
+        
         fprintf('\b\b\b\b%3d%%', round(100*kj/numel(tracks)));
     end
-
+    
     %(TP) Calculating pallAdiff
     maxdiff = max([tracks.diff]);
     mindiff = min([tracks.diff]);
