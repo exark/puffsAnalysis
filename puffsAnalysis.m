@@ -56,13 +56,13 @@
 % >> matlabpool
 % in the command prompt.
 
-% Classification: 
+% Classification:
 % ----------------------------
-% 1) Through much experimentation, we found that classification with parameters pallAdiff, pfallR2, pvp, tnpeaks and npeaks yielded 
-% best results and strongly recommend staying with these to build the classifier. 
-% 2) The classification code was written using Python 3.5 and many of Python's additional libraries. 
-%    Download the Anaconda distribution of Python to ensure that that your machine has all the necessary packages. 
-% 3) .mat 
+% 1) Through much experimentation, we found that classification with parameters pallAdiff, pfallR2, pvp, tnpeaks and npeaks yielded
+% best results and strongly recommend staying with these to build the classifier.
+% 2) The classification code was written using Python 3.5 and many of Python's additional libraries.
+%    Download the Anaconda distribution of Python to ensure that that your machine has all the necessary packages.
+% 3) .mat
 
 % Francois Aguet (last mod. 05/29/2013)
 
@@ -101,27 +101,28 @@ opts = {'Overwrite', ip.Results.Overwrite};
 %-------------------------------------------------------------------------------
 % 1) Detection
 %-------------------------------------------------------------------------------
-runDetection(data, 'SigmaSource', ip.Results.GaussianPSF, 'Master', ip.Results.MasterCh, opts{:});
+runDetection(data, 'SigmaSource', ip.Results.GaussianPSF, 'Master', ip.Results.MasterCh,  'Alpha', 0.0001, opts{:});
 cmap = plotPSNRDistribution(data, 'Pool', false, 'Channel', ip.Results.MasterCh);
 
 %-------------------------------------------------------------------------------
 % 2) Tracking
 %-------------------------------------------------------------------------------
-%settings = loadTrackSettings('Radius', ip.Results.TrackingRadius, 'MaxGapLength', ip.Results.TrackingGapLength);
 settings = loadTrackSettings(); %(TP)***
 runTracking(data, settings, opts{:});
 
 %-------------------------------------------------------------------------------
 % 3) Track processing
 %-------------------------------------------------------------------------------
-runPuffTrackProcessing(data, 'Overwrite', true);
+runPuffTrackProcessing(data);
 
 %-------------------------------------------------------------------------------
 % 4) Random Forest Classification using Python
 %-------------------------------------------------------------------------------
-runPuffClassification(data, 'RF classifier', 'IsTraining', false,...
-    'SecondFile', 'C:\Users\tiffany\Downloads\[RunX]SpH MOR example puff movie\Cell1_0.1s\Ch1\Classification\ProcessedTracks.npy');
-                     
-                     
+% runPuffClassification(data, 'RF classifier', 'IsTraining', false,...
+%    'SecondFile', 'C:\Users\tiffany\Downloads\[RunX]SpH MOR example puff movie\Cell1_0.1s\Ch1\Classification\ProcessedTracks.npy');
+ runPuffClassification(data, 'RF classifier', 'IsTraining', true,...
+    'Fields', 'isPuff diff pfallR2 pvp pallAcdiff npeaks tnpeaks lifetime_s');
+
+
 
 res = []; % (ZW) This is a place holder for the return value until we have a runPuffsAnalysis or similar

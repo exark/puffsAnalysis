@@ -8,7 +8,7 @@ ip = inputParser;
 ip.CaseSensitive = false;
 ip.addParamValue('Radius', []);
 ip.addParamValue('GapRadius', [1 2]); %(TP)***
-ip.addParamValue('LinkRadius', [1 4]); %(TP)***
+ip.addParamValue('LinkRadius', [1 2]); %(TP)***
 ip.addParamValue('MaxGapLength', 0); %(TP)***
 ip.parse(varargin{:});
 

@@ -308,20 +308,20 @@ rmlt= find([tracks.lifetime_s]<0.4);
 tracks(rmlt) = [];
 buffer(rmlt,:) = [];
 
-%(ZYW) Remove all tracks that start in first frame and have peak amplitude
+% (ZYW) Remove all tracks that start in first frame and have peak amplitude
 % in first frame of track.
-% rmft = [];
-% for i=1:numel(tracks)
-%   ampl = tracks(i).A + tracks(i).c;
-%   if tracks(i).start == 1
-%     [~, ii] = max(ampl);
-%     if ii == 1
-%       rmft = [rmft i];
-%     end
-%   end
-% end
-% tracks(rmft) = [];
-% buffer(rmft,:) = [];
+rmft = [];
+for i=1:numel(tracks)
+  ampl = tracks(i).A + tracks(i).c;
+  if tracks(i).start == 1
+    [~, ii] = max(ampl);
+    if ii == 1
+      rmft = [rmft i];
+    end
+  end
+end
+tracks(rmft) = [];
+buffer(rmft,:) = [];
 
 % remove tracks that fall into image boundary
 minx = round(arrayfun(@(t) min(t.x(:)), tracks));

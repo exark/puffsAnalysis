@@ -51,7 +51,7 @@ if isempty(sigma)
                     if iscell(data(i).framePaths{c})
                         frames(i,:) = arrayfun(@(f) double(imread(data(i).framePaths{c}{f})), fidx, 'unif', 0);
                     else
-                        frames(i,:) = arrayfun(@(f) double(readtiff(data(i).framePaths{c}, f)), fidx', 'unif', 0); 
+                        frames(i,:) = arrayfun(@(f) double(readtiff(data(i).framePaths{c}, f)), fidx', 'unif', 0);
                     end
                 end
                 sigma(c) = getGaussianPSFsigmaFromData(vertcat(frames(:)), 'Display', false);
@@ -59,7 +59,7 @@ if isempty(sigma)
         end
         fprintf('Gaussian PSF s.d. values: ');
         fprintf(' %.2f', sigma);
-        fprintf('\n');            
+        fprintf('\n');
     else
         error('runDetection error: mismatch between the channel fluorophores in ''data''. Could not estimate ''sigma''.');
     end
@@ -116,18 +116,18 @@ parfor k = 1:data.movieLength
     end
     % (TP): psd returns pstruct with Gaussian parameters, standard
     % deviations, p-values and mask at column corresponding to frame k
-    % is filled with all the significant pixels (in amplitude)  
+    % is filled with all the significant pixels (in amplitude)
     [pstruct, mask(:,:,k)] = pointSourceDetection(img, sigma(mCh), 'Alpha', opts.Alpha,...
-        'Mask', opts.CellMask, 'RemoveRedundant', opts.RemoveRedundant); %#ok<PFBNS>
-    
+        'Mask', opts.CellMask, 'RemoveRedundant', opts.RemoveRedundant, 'WindowSize', ceil(6*sigma(mCh))); %#ok<PFBNS>
+
     if ~isempty(pstruct)
         pstruct.s = sigma;
-        % (TP) removes 's_pstd' from pstruct 
+        % (TP) removes 's_pstd' from pstruct
         pstruct = rmfield(pstruct, 's_pstd');
-        
+
         pstruct.dRange{mCh} = [min(img(:)) max(img(:))];
         np = numel(pstruct.x);
-        
+
         % expand structure for slave channels
         for f = 1:length(dfields)
             tmp = NaN(nCh, np);
@@ -140,7 +140,7 @@ parfor k = 1:data.movieLength
             tmp(mCh,:) = pstruct.(lfields{f});
             pstruct.(lfields{f}) = tmp;
         end
-        
+
         % get component size and intensity for each detection
         CC = bwconncomp(mask(:,:,k));
         % (TP) matrix of connected components, values >= 0, 0 = bg, 1 =
@@ -148,15 +148,15 @@ parfor k = 1:data.movieLength
         labels = labelmatrix(CC);
         % mask label for each detection
         loclabels = labels(sub2ind(size(img), pstruct.y_init, pstruct.x_init));
-        %(TP) pixelidxlist: 1-by-NumObjects cell array where the 
+        %(TP) pixelidxlist: 1-by-NumObjects cell array where the
         %kth element in the cell array is a vector containing the linear indices of the pixels in the kth object.
         compSize = cellfun(@(i) numel(i), CC.PixelIdxList);
-        % (TP) gets the indices of all the pixels in this frame by object 
+        % (TP) gets the indices of all the pixels in this frame by object
         pstruct.maskN = compSize(loclabels);
         compInt = cellfun(@(i) sum(img(i))/numel(i), CC.PixelIdxList);
         % (TP) average amplitude of all pixels
         pstruct.maskA = compInt(loclabels);
-        
+
         % (TP) % ci = values in A that are not in B
         for ci = setdiff(1:nCh, mCh)
             if ~iscell(data.framePaths{ci})
@@ -166,26 +166,26 @@ parfor k = 1:data.movieLength
             end
             pstruct.dRange{ci} = [min(img(:)) max(img(:))];
             pstructSlave = fitGaussians2D(img, pstruct.x(mCh,:), pstruct.y(mCh,:), [], sigma(ci)*ones(1,np), [], 'Ac');
-            
+
             % localize, and compare intensities & (x,y)-coordinates. Use localization result if it yields better contrast
             pstructSlaveLoc = fitGaussians2D(img, pstruct.x(mCh,:), pstruct.y(mCh,:), pstructSlave.A, sigma(ci)*ones(1,np), pstructSlave.c, 'xyAc');
             idx = sqrt((pstruct.x(mCh,:)-pstructSlaveLoc.x).^2 + (pstruct.y(mCh,:)-pstructSlaveLoc.y).^2) < 3*sigma(mCh) & pstructSlaveLoc.A > pstructSlave.A;
-            
+
             % fill slave channel information
             for f = 1:length(sfields)
                 pstruct.(sfields{f})(ci,~idx) = pstructSlave.(sfields{f})(~idx);
                 pstruct.(sfields{f})(ci,idx) = pstructSlaveLoc.(sfields{f})(idx);
             end
-            
+
             nanIdx = isnan(pstructSlave.x); % points within slave channel border, remove from detection results
             for f = 1:length(rmfields)
                 pstruct.(rmfields{f})(:,nanIdx) = [];
             end
             np = size(pstruct.x,2);
-            
+
             pstruct.isPSF(ci,:) = ~pstruct.hval_AD(ci,:);
         end
-        
+
         % add fields for tracker
         pstruct.xCoord = [pstruct.x(mCh,:)' pstruct.x_pstd(mCh,:)'];
         pstruct.yCoord = [pstruct.y(mCh,:)' pstruct.y_pstd(mCh,:)'];

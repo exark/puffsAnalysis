@@ -13,7 +13,7 @@ if __name__ == "__main__":
 	parser.add_argument('--fields', default = [], nargs="+", help="Field(s) to extract from .mat file")
 	parser.add_argument('--testing', dest='testing',default=[])
 	args = parser.parse_args()
- 
+
 	traindir = op.join(op.dirname(op.dirname(args.training)),'Classification')
 	savedir = traindir
 
@@ -21,10 +21,10 @@ if __name__ == "__main__":
 		train = np.load(args.training)
 		fields = list(train.dtype.names)
 	else:
-		if not args.fields or len(args.fields) <= 1: 
+		if not args.fields or len(args.fields) <= 1:
 			raise ValueError('Must import at least two parameters (including labeled variable) for RF classification')
 			quit()
-		else: 
+		else:
 			fields = args.fields
 		train = mat2py(args.training, fields, traindir)
 
@@ -51,7 +51,4 @@ if __name__ == "__main__":
 	n.write('\n Maybe/Total: ' + str(ntracks[3]) + '/' + str(ntracks[0]) + ' (' + str((ntracks[3]/ntracks[0]) *100) + '%)\n')
 	n.close()
 
-	plotRandomForests(nonpuffs, puffs, maybe, fields[1:], savedir, p2D=[2,0])
-
-	
-
+	# plotRandomForests(nonpuffs, puffs, maybe, fields[1:], savedir, p2D=[2,0])
