@@ -56,63 +56,68 @@ secondFile = ip.Results.SecondFile;
 file = ip.Results.File;
 overwrite = ip.Results.Overwrite;
 
+nd = numel(data)
+for i = 1:nd
 % Finds proper path to file
-[~,~,ext] = fileparts(file);
-if ext == '.npy'
-    relativePath = 'Classification';
-end
-filePath = [data.source relativePath filesep file];
-
-% Finds paths to training and testing data
-if isTraining && exist(filePath, 'file')==2
-    trainPath = filePath;
-    if ~isempty(secondFile) && exist(secondFile, 'file')==2
-        testPath = secondFile;
-    elseif ~isempty(secondFile) && ~exist(secondFile, 'file')==2
-        testPath = input('\n Path to second file does not exist. Please enter correct path for testing: ', 's');
-    else
-        testPath = '';
+    [~,~,ext] = fileparts(file);
+    if ext == '.npy'
+        relativePath = 'Classification';
     end
-elseif ~isTraining && exist(filePath, 'file')==2
-    testPath = filePath;
-    if isempty(secondFile)
-        trainPath = input('\n Please enter full path name of tracks to be used for training: ', 's');
-    elseif ~isempty(secondFile) && ~exist(secondFile, 'file')==2
-        trainPath = input('\n Path to second file does not exist. Please enter correct path for training: ', 's')
+    filePath = [data(i).source relativePath filesep file];
+
+    % Finds paths to training and testing data
+    if isTraining && exist(filePath, 'file')==2
+        trainPath = filePath;
+        if ~isempty(secondFile) && exist(secondFile, 'file')==2
+            testPath = secondFile;
+        elseif ~isempty(secondFile) && ~exist(secondFile, 'file')==2
+            testPath = input('\n Path to second file does not exist. Please enter correct path for testing: ', 's');
+        else
+            testPath = '';
+        end
+    elseif ~isTraining && exist(filePath, 'file')==2
+        testPath = filePath;
+        if isempty(secondFile)
+            trainPath = input('\n Please enter full path name of tracks to be used for training: ', 's');
+        elseif ~isempty(secondFile) && ~exist(secondFile, 'file')==2
+            trainPath = input('\n Path to second file does not exist. Please enter correct path for training: ', 's')
+        else
+            trainPath = secondFile;
+        end
     else
-        trainPath = secondFile;
+        fprintf(['\n' file ' does not exist in ' data(i).source]);
+        return;
     end
-else
-    fprintf(['\n' file ' does not exist in ' data.source]);
-    return;
+
+    %Checks if fields are entered in appropriately
+    [~,~,ext] = fileparts(trainPath);
+    if ext == '.mat' & isempty(ip.Results.Fields)
+        fields = input('\n Please enter parameter names to train classifier with as one string separated by spaces: ' , 's');
+    elseif ext == '.npy' & ~isempty(ip.Results.Fields)
+        fprintf('\n Classification will be run based on fields from .npy file of training data, not the fields entered.');
+        fields = '';
+    else
+        fields = ip.Results.Fields;
+    end
+
+    %Runs main if classification folder does not exist for test data or overwrite is true
+    if ~exist(fullfile(fileparts(fileparts(testPath)),'Classification')) || overwrite
+        fprintf('\n Running Random Forest classification...');
+        main(trainPath, testPath, fields, classifier);
+    else
+        fprintf('\n Classification has already been run for ', testPath);
+    end
 end
 
-%Checks if fields are entered in appropriately
-[~,~,ext] = fileparts(trainPath);
-if ext == '.mat' & isempty(ip.Results.Fields)
-    fields = input('\n Please enter parameter names to train classifier with as one string separated by spaces: ' , 's');
-elseif ext == '.npy' & ~isempty(ip.Results.Fields)
-    fprintf('\n Classification will be run based on fields from .npy file of training data, not the fields entered.');
-    fields = '';
-else
-    fields = ip.Results.Fields;
-end
-
-%Runs main if classification folder does not exist for test data or overwrite is true
-if ~exist(fullfile(fileparts(fileparts(testPath)),'Classification')) || overwrite
-    fprintf('\n Running Random Forest classification...');
-    main(trainPath, testPath, fields, classifier);
-else
-    fprintf('\n Classification has already been run for ', testPath);
-end
 
 function main(trainPath, testPath, fields, classifier)
 
 %Make classification folders if they don't exist
-cPath = {fullfile(fileparts(fileparts(trainPath)), 'Classification'),
-          fullfile(fileparts(fileparts(testPath)), 'Classification')};
-for i = 1:numel(cPath)
-    if ~(exist(cPath{i}, 'dir')==7)
+paths = {trainPath testPath};
+for i = 1:numel(paths)
+    if ~isempty(paths{i})
+        cPath{i} = fullfile(fileparts(fileparts(paths{i})), 'Classification');
+        if ~(exist(cPath{i}, 'dir')==7)
         mkdir(cPath{i});
     end
 end

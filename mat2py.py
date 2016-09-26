@@ -13,6 +13,12 @@ import numpy as np
 def mat2py(mfilepath, params, savedir):
 
 	try:
+
+		#If we want to be more flexible with name of structs
+		# f = dict(h5py.File(mfilepath,'r'))
+		# k = list(f.keys())
+		# gp1 = f.get(k[1])
+
 		# Imports MATLAB struct and retrieves tracks 
 		f = h5py.File(mfilepath,'r')
 		gp1 = f.get('tracks')
