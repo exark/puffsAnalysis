@@ -768,32 +768,32 @@ end
         end
         
         %(TP) Calculating hpeaks, php
-        if tracks(i).tnpeaks == 0
-            tracks(i).php = 0;
-            tracks(i).hpeaks = 0;
+        if tracks(kj).tnpeaks == 0
+            tracks(kj).php = 0;
+            tracks(kj).hpeaks = 0;
         else
-            [m,j] = max([tracks(i).Ac]);
-            p = findpeaks(tracks(i).Ac, 'MinPeakHeight', m*0.5);
-            tracks(i).hpeaks = numel(p)-1; %not including max
-            tracks(i).php = tracks(i).hpeaks/tracks(i).tnpeaks;
+            [m,j] = max([tracks(kj).Ac]);
+            p = findpeaks(tracks(kj).Ac, 'MinPeakHeight', m*0.5);
+            tracks(kj).hpeaks = numel(p)-1; %not including max
+            tracks(kj).php = tracks(kj).hpeaks/tracks(kj).tnpeaks;
         end
         
         %(TP) cdiff: compares background after the max to background before
         %the max
-        maxIdx = find([tracks(i).Ac] == max([tracks(i).Ac]));
-        if maxIdx == numel([tracks(i).Ac])
-            tracks(i).cdiff = (tracks(i).c(maxIdx) - mean([tracks(i).c(1:maxIdx-1)]))/max(tracks(i).c);
+        maxIdx = find([tracks(kj).Ac] == max([tracks(kj).Ac]));
+        if maxIdx == numel([tracks(kj).Ac])
+            tracks(kj).cdiff = (tracks(kj).c(maxIdx) - mean([tracks(kj).c(1:maxIdx-1)]))/max(tracks(kj).c);
         else
-            maxc = find([tracks(i).c] == max([tracks(i).c(maxIdx+1:end)]), 1, 'last');
+            maxc = find([tracks(kj).c] == max([tracks(kj).c(maxIdx+1:end)]), 1, 'last');
             if maxIdx == 1
-                tracks(i).cdiff = (tracks(i).c(maxc) - [tracks(i).c(maxIdx)])/max(tracks(i).c);
+                tracks(kj).cdiff = (tracks(kj).c(maxc) - [tracks(kj).c(maxIdx)])/max(tracks(kj).c);
             else 
-                tracks(i).cdiff = (tracks(i).c(maxc) - mean([tracks(i).c(1:maxIdx-1)]))/max(tracks(i).c);
+                tracks(kj).cdiff = (tracks(kj).c(maxc) - mean([tracks(kj).c(1:maxIdx-1)]))/max(tracks(kj).c);
             end
         end
         
         %(TP) to filter out low SNR tracks
-        tracks(i).percentC = (mean([tracks(i).c]))/(mean([tracks(i).Ac]));
+        tracks(i).percentC = (mean([tracks(kj).c]))/(mean([tracks(kj).Ac]));
         
         %(TP) Calculating diff, to get pallAdiff after 
         tracks(kj).diff = tracks(kj).maxAc - mean([tracks(kj).Ac]); 
