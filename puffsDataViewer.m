@@ -89,7 +89,7 @@ trackCheckbox = uicontrol(ph, 'Style', 'checkbox', 'String', 'Tracks:', 'Value',
     'Position', [200 30 80 15], 'HorizontalAlignment', 'left',...
     'Callback', @updateSlice);
 trackChoice = uicontrol('Style', 'popup',...
-    'String', {'Category', 'Lifetime', 'EAP Status', 'Object Type', 'Random'},...
+    'String', {'Lifetime', 'EAP Status', 'Object Type', 'Random'},...
     'Position', [280 33 100 20], 'Callback', @trackChoice_Callback);
 trackRangeButton = uicontrol(ph, 'Style', 'pushbutton', 'String', 'Settings',...
     'Position', [280 5 80 20], 'HorizontalAlignment', 'left',...
@@ -371,9 +371,6 @@ if exist([data.source ip.Results.RelativePath filesep fileName], 'file')==2 && i
         bgA = [bgA{:}];
     end
     clear tmp;
-   % (TP) tracks = tracks([tracks.lifetime_s] >= data.framerate*ip.Results.Cutoff_f);
-    %[~, sortIdx] = sort([tracks.lifetime_s], 'descend');
-    %tracks = tracks(sortIdx);
 
     % apply cell mask
 %     if ~isempty(cellMask)
@@ -491,8 +488,6 @@ if ~isempty(tracks)
         set(handles.trackSlider, 'Max', nt);
         set(handles.trackSlider, 'SliderStep', [1/(nt-1) 0.05]);
     end
-    setTrackColormap('Category');
-    setColorbar('Category');
 else
     set(handles.trackSlider, 'Visible', 'off');
     set(handles.trackLabel, 'Visible', 'off');
@@ -1025,9 +1020,6 @@ set(hz, 'ActionPostCallback', @czoom);
 
     function setTrackColormap(mode)
         switch mode
-            case 'Category'
-                cmap = [0 1 0; 1 1 0; 1 0.5 0; 1 0 0; 0 1 1; 0 0.5 1; 0 0 1; 0.5 0 1];
-                cmap = cmap([tracks.catIdx],:);
             case 'Lifetime'
                 lifetimes_f = round([tracks.lifetime_s]/data.framerate);
                 df = data.movieLength-round(120/data.framerate);
@@ -1057,12 +1049,6 @@ set(hz, 'ActionPostCallback', @czoom);
             set(hChLabel, 'Visible', 'on');
         else
             set(hChLabel, 'Visible', 'off');
-        end
-    end
-
-    function statsButton_Callback(varargin)
-        if ~isempty(tracks)
-            plotTrackClasses([tracks.catIdx]);
         end
     end
 
@@ -1107,33 +1093,6 @@ set(hz, 'ActionPostCallback', @czoom);
             maxTxt = uicontrol(pht, 'Style', 'text', 'String', [num2str(maxLft) ' s'],...
                 'Position', [250 b-2 40 20], 'HorizontalAlignment', 'left');
         end
-
-
-        % Category selection buttons
-        b = 115;
-        catCheck = zeros(1,8);
-        uicontrol(pht, 'Style', 'text', 'String', 'Single tracks: ',...
-            'Position', [5 b+10 90 20], 'HorizontalAlignment', 'left');
-        catCheck(1) = uicontrol(pht, 'Style', 'checkbox', 'String', 'Valid',...
-            'Position', [5 b 60 15], 'HorizontalAlignment', 'left', 'Value', catCheckVal(1));
-        catCheck(2) = uicontrol(pht, 'Style', 'checkbox', 'String', 'Faulty',...
-            'Position', [65 b 140 15], 'HorizontalAlignment', 'left', 'Value', catCheckVal(2));
-        catCheck(3) = uicontrol(pht, 'Style', 'checkbox', 'String', 'Cut',...
-            'Position', [125 b 80 15], 'HorizontalAlignment', 'left', 'Value', catCheckVal(3));
-        catCheck(4) = uicontrol(pht, 'Style', 'checkbox', 'String', 'Persistent',...
-            'Position', [185 b 90 15], 'HorizontalAlignment', 'left', 'Value', catCheckVal(4));
-
-        b = 75;
-        uicontrol(pht, 'Style', 'text', 'String', 'Compound tracks: ',...
-            'Position', [5 b+10 120 20], 'HorizontalAlignment', 'left');
-        catCheck(5) = uicontrol(pht, 'Style', 'checkbox', 'String', 'Valid',...
-            'Position', [5 b 60 15], 'HorizontalAlignment', 'left', 'Value', catCheckVal(5));
-        catCheck(6) = uicontrol(pht, 'Style', 'checkbox', 'String', 'Faulty',...
-            'Position', [65 b 140 15], 'HorizontalAlignment', 'left', 'Value', catCheckVal(6));
-        catCheck(7) = uicontrol(pht, 'Style', 'checkbox', 'String', 'Cut',...
-            'Position', [125 b 80 15], 'HorizontalAlignment', 'left', 'Value', catCheckVal(7));
-        catCheck(8) = uicontrol(pht, 'Style', 'checkbox', 'String', 'Persistent',...
-            'Position', [185 b 90 15], 'HorizontalAlignment', 'left', 'Value', catCheckVal(8));
 
         % EAP status selection buttons
         b = 35;
@@ -1247,15 +1206,6 @@ set(hz, 'ActionPostCallback', @czoom);
                         'YTick', [1 20:20:120 160],...
                         'YTickLabel', [data.framerate 20:20:120 (nf-1)*data.framerate], sfont{:});
                     text(-0.1, 80, 'Lifetime (s)', 'Rotation', 90, 'HorizontalAlignment', 'center', 'Parent', hLegend, lfont{:});
-                case 'Category'
-                    xlabels = {' valid', ' faulty', ' cut', ' persistent',...
-                        ' valid', ' faulty', ' cut', ' persistent'};
-                    lmap = [0 1 0; 1 1 0; 1 0.5 0; 1 0 0; 0 1 1; 0 0.5 1; 0 0 1; 0.5 0 1];
-                    imagesc(reshape(lmap, [size(lmap,1) 1 3]), 'Parent', hLegend);
-                    set(hLegend, 'Visible', 'on', 'YAxisLocation', 'right', 'XTick', [],...
-                        'YTick', 1:8, 'YTickLabel', xlabels, 'TickLength', [0 0]);
-                    text(-.1, 2.5, 'Single', 'Rotation', 90, 'HorizontalAlignment', 'center', 'Parent', hLegend, lfont{:});
-                    text(-.1, 6.5, 'Compound', 'Rotation', 90, 'HorizontalAlignment', 'center', 'Parent', hLegend, lfont{:});
                 case 'EAP Status'
                     xlabels = {' N.S.', ' Signif. M/S', ' Signif. indep.'};
                     lmap = hsv2rgb([0 0 0.8; 0.55 1 0.9; 0.33 1 0.9]); % ns, slave sig., master sig.

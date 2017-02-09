@@ -504,12 +504,6 @@ if postprocess
     % Ib)  Single tracks with invalid gaps
     % Ic)  Single tracks cut at beginning or end
     % Id)  Single tracks, persistent
-    % IIa) Compound tracks with valid gaps
-    % IIb) Compound tracks with invalid gaps
-    % IIc) Compound tracks cut at beginning or end
-    % IId) Compound tracks, persistent
-
-    % The categories correspond to index 1-8, in the above order
 
     if ismember('gapStatus', fieldnames(tracks))
         validGaps = arrayfun(@(t) max([t.gapStatus 4]), tracks)==4;
@@ -526,33 +520,11 @@ if postprocess
     trackLengths = [tracks.end]-[tracks.start]+1;
 
     C = [mask_Ia;
-        2*mask_Ib;
-        3*(singleIdx & vis==2); % this should b3
-        4*(singleIdx & vis==3);
-        5*(~singleIdx & validGaps & vis==1);
-        6*(~singleIdx & ~validGaps & vis==1);
-        7*(~singleIdx & vis==2); % this should be 7
-        8*(~singleIdx & vis==3)];
+        2*mask_Ib];
 
     C = num2cell(sum(C,1));
     % assign category
     [tracks.catIdx] = deal(C{:});
-
-    %----------------------------------------------------------------------------
-    % II. Identify diffraction-limited tracks (CCPs)
-    %----------------------------------------------------------------------------
-    % Criterion: if all detected points pass AD-test, then track is a CCP.
-    % (gaps in the track are not considered in this test)
-
-    % # diffraction-limited points per track (can be different from track length for compound tracks!)
-    nPl = arrayfun(@(i) nansum(i.hval_AD(mCh,:) .* ~i.gapVect), tracks);
-    isCCP = num2cell(nPl==0);
-    [tracks.isCCP] = deal(isCCP{:});
-    isCCP = [isCCP{:}];
-
-    % average mask area per track
-    % meanMaskAreaCCP = arrayfun(@(i) nanmean(i.maskN), tracks(isCCP));
-    % meanMaskAreaNotCCP = arrayfun(@(i) nanmean(i.maskN), tracks(~isCCP));
 
     %----------------------------------------------------------------------------
     % III. Process 'Ib' tracks:
@@ -581,7 +553,7 @@ if postprocess
     % - max intensity must be within 2.5th percentile of max. intensity distribution for 'Ia' tracks
     % - lifetime >= 5 frames (at 4 frames: track = [x o o x])
 
-    % assign category I to tracks that match criteria
+    % assign category 1 to tracks that match criteria
     for k = 1:numel(idx_Ib);
         i = idx_Ib(k);
 
@@ -624,13 +596,6 @@ if postprocess
     end
 
     %----------------------------------------------------------------------------
-    % V. Assign Cat. Ib to tracks that are not diffraction-limited CCPs
-    %----------------------------------------------------------------------------
-    if opts.ForceDiffractionLimited
-        [tracks([tracks.catIdx]==1 & ~isCCP).catIdx] = deal(2);
-    end
-
-    %----------------------------------------------------------------------------
     % VI. Cut tracks with sequential events (hotspots) into individual tracks
     %----------------------------------------------------------------------------
     %splitCand = find([tracks.catIdx]==1 & arrayfun(@(i) ~isempty(i.gapIdx), tracks) & trackLengths>4);
@@ -664,7 +629,6 @@ if postprocess
 
         % new segments must be at least 5 frames
         delta = diff([1 gapIdx trackLengths(k)]); % (TP) gives the number of frames of segment from start of track to gap and segment from gap to end of track
-        %gapIdx(delta(1:end-1)<5 | delta(2:end)<5) = [];
         gapIdx(delta(1:end-1)<2 | delta(2:end)<2) = []; % (TP***): new segs need to be at least 0.2s
 
         ng = numel(gapIdx);
@@ -729,10 +693,6 @@ if postprocess
     nGaps = arrayfun(@(i) sum(i.gapVect), tracks);
     trackLengths = [tracks.end]-[tracks.start]+1;
 
-    % fprintf('# tracks with >50%% gaps: %d\n', sum(nGaps./trackLengths>=0.5));
-    [tracks(nGaps./trackLengths>=0.5).catIdx] = deal(2);
-
-
     % Displacement statistics: remove tracks with >4 large frame-to-frame displacements
     nt = numel(tracks);
     dists = cell(1,nt);
@@ -745,17 +705,16 @@ if postprocess
     p95 = prctile(medianDist, 95);
     for i = 1:nt
         if sum(dists{i}>p95)>4 && tracks(i).catIdx==1
-        %if sum(dists{i}>p95)>1 && tracks(i).catIdx==1 %(TP***): remove tracks >1 frame-frame displacement
             tracks(i).catIdx = 2;
         end
     end
 
 
-%(TP***) assign category 6 to all category 1 tracks with gaps
+%(TP***) remove all category 1 tracks with gaps
 idx_Ia = find([tracks.catIdx]==1);
 for k = 1:numel(idx_Ia)
  if ~isempty(tracks(idx_Ia(k)).gapIdx)
-     tracks(idx_Ia(k)).catIdx = 6;
+     tracks(idx_Ia(k)).catIdx = 2;
  end
 end
 
@@ -806,17 +765,17 @@ end
         %(TP)Calculating tnpeaks, npeaks, pvp (% valid points)
         [a,~,~,d] = findpeaks(tracks(kj).Ac);
         tracks(kj).tnpeaks = numel(a);
-        p = findpeaks(tracks(kj).Ac, 'MinPeakProminence', mean(d)); 
-        tracks(kj).npeaks = numel(p); 
-        
+        p = findpeaks(tracks(kj).Ac, 'MinPeakProminence', mean(d));
+        tracks(kj).npeaks = numel(p);
+
         if tracks(kj).npeaks == 1 & tracks(kj).tnpeaks == 1
             tracks(kj).pvp = 0;
-        elseif tracks(kj).tnpeaks == 0 
+        elseif tracks(kj).tnpeaks == 0
             tracks(kj).pvp = 0;
         else
             tracks(kj).pvp = tracks(kj).npeaks/tracks(kj).tnpeaks;
         end
-        
+
         %(TP) Calculating hpeaks, php
         if tracks(kj).tnpeaks == 0
             tracks(kj).php = 0;
@@ -827,7 +786,7 @@ end
             tracks(kj).hpeaks = numel(p)-1; %not including max
             tracks(kj).php = tracks(kj).hpeaks/tracks(kj).tnpeaks;
         end
-        
+
         %(TP) cdiff: compares background after the max to background before
         %the max
         maxIdx = find([tracks(kj).Ac] == max([tracks(kj).Ac]));
@@ -837,20 +796,20 @@ end
             maxc = find([tracks(kj).c] == max([tracks(kj).c(maxIdx+1:end)]), 1, 'last');
             if maxIdx == 1
                 tracks(kj).cdiff = (tracks(kj).c(maxc) - [tracks(kj).c(maxIdx)])/max(tracks(kj).c);
-            else 
+            else
                 tracks(kj).cdiff = (tracks(kj).c(maxc) - mean([tracks(kj).c(1:maxIdx-1)]))/max(tracks(kj).c);
             end
         end
 
         %(TP) to filter out low SNR tracks
         tracks(kj).percentC = (mean([tracks(kj).c]))/(mean([tracks(kj).Ac]));
-        
-        %(TP) Calculating diff, to get pallAdiff after 
-        tracks(kj).diff = tracks(kj).maxAc - mean([tracks(kj).Ac]); 
-        
+
+        %(TP) Calculating diff, to get pallAdiff after
+        tracks(kj).diff = tracks(kj).maxAc - mean([tracks(kj).Ac]);
+
         fprintf('\b\b\b\b%3d%%', round(100*kj/numel(tracks)));
     end
-    
+
     %(TP) Calculating pallAdiff
     maxdiff = max([tracks.diff]);
     mindiff = min([tracks.diff]);
