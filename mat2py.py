@@ -6,7 +6,7 @@ import h5py
 import numpy as np
 
 
-# mat2py imports params from the MATLAB struct specified by mfilepath, saves it as .npy in savedir and returns it 
+# mat2py imports params from the MATLAB struct specified by mfilepath, saves it as .npy in savedir and returns it
 # Params are used for classification; the first must always be the class variable e.g. (isPuff)
 # MATLAB struct must be saved as v7.3
 
@@ -19,7 +19,7 @@ def mat2py(mfilepath, params, savedir):
 		# k = list(f.keys())
 		# gp1 = f.get(k[1])
 
-		# Imports MATLAB struct and retrieves tracks 
+		# Imports MATLAB struct and retrieves tracks
 		f = h5py.File(mfilepath,'r')
 		gp1 = f.get('tracks')
 
@@ -33,7 +33,7 @@ def mat2py(mfilepath, params, savedir):
 			else:
 				arr = np.hstack((arr,data))
 
-		# Convert arr from ndarray to structured array to store parameter names 
+		# Convert arr from ndarray to structured array to store parameter names
 		x = np.core.records.fromarrays((np.squeeze(arr)).transpose(), names = ','.join(params))
 
 		f.close()

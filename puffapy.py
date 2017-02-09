@@ -4,7 +4,7 @@ import numpy as np
 
 from mat2py import mat2py
 from runRandomForests import runRandomForests
-from plotRandomForests import plotRandomForests
+#from plotRandomForests import plotRandomForests
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Random Forest classification of tracks')
@@ -60,4 +60,4 @@ if __name__ == "__main__":
 		n.write("\n\t %d. %s (%f)" % (f + 1, fields[indices[f]+1], importances[indices[f]]))
 	n.close()
 
-	plotRandomForests(nonpuffs, puffs, maybe, fields[1:], savedir, p2D=[1,2], p3D=[0,1,2])
+#	plotRandomForests(nonpuffs, puffs, maybe, fields[1:], savedir, p2D=[1,2], p3D=[0,1,2])

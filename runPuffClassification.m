@@ -56,7 +56,7 @@ secondFile = ip.Results.SecondFile;
 file = ip.Results.File;
 overwrite = ip.Results.Overwrite;
 
-nd = numel(data)
+nd = numel(data);
 for i = 1:nd
 % Finds proper path to file
     [~,~,ext] = fileparts(file);
@@ -102,7 +102,7 @@ for i = 1:nd
 
     %Runs main if classification folder does not exist for test data or overwrite is true
     if ~exist(fullfile(fileparts(fileparts(testPath)),'Classification')) || overwrite
-        fprintf('\n Running Random Forest classification...');
+        fprintf('Running Random Forest classification (%s)...\n',getShortPath(data(i)));
         main(trainPath, testPath, fields, classifier);
     else
         fprintf('\n Classification has already been run for ', testPath);
@@ -118,7 +118,8 @@ for i = 1:numel(paths)
     if ~isempty(paths{i})
         cPath{i} = fullfile(fileparts(fileparts(paths{i})), 'Classification');
         if ~(exist(cPath{i}, 'dir')==7)
-        mkdir(cPath{i});
+            mkdir(cPath{i});
+        end
     end
 end
 
@@ -137,5 +138,4 @@ end
 %Call command prompt to run puffapy.py
 setenv('DYLD_LIBRARY_PATH','/usr/local/lib/python3.5/site-packages/scipy/.dylibs');
 systemCommand = strjoin({'/usr/local/bin/python3' puffapy classifierPath trainPath fields testPath}, ' ');
-systemCommand
 system(systemCommand);

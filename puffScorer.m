@@ -207,6 +207,7 @@ if exist([data.source 'Tracking' filesep fileName], 'file')==2
     yunit = round(maxInt ./ 10.^da) .* 10.^(da-1);
     maxInt = ceil(maxInt./yunit) .* yunit;
 end
+assignin('base','newtracks',tracks);
 fprintf('done.\n');
 
 hfig = figure('Units', 'pixels', 'Position', [250 250 1200 600],...

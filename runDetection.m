@@ -193,6 +193,7 @@ parfor k = 1:data.movieLength
         frameInfo(k) = orderfields(pstruct, fieldnames(frameInfo(k))); %#ok<PFOUS>
     else
         frameInfo(k).dRange{mCh} = [min(img(:)) max(img(:))];
+        frameInfo(k).s = sigma;
         for ci = setdiff(1:nCh, mCh)
             if ~iscell(data.framePaths{ci})
                 img = double(readtiff(data.framePaths{ci}, k));
