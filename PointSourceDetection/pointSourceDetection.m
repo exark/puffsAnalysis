@@ -1,10 +1,10 @@
 %[pstruct, mask, imgLM, imgLoG] = pointSourceDetection(img, sigma, mode)
 %
-% Inputs :   
+% Inputs :
 %                 img : input image
 %               sigma : standard deviation of the Gaussian PSF
 %
-% Options (as 'specifier'-value pairs): 
+% Options (as 'specifier'-value pairs):
 %
 %              'mode' : parameters to estimate. Default: 'xyAc'.
 %             'alpha' : alpha value used in the statistical tests. Default: 0.05.
@@ -19,7 +19,7 @@
 %        'ConfRadius' : Confidence radius for positions, beyond which the fit is rejected. Default: 2*sigma
 %        'WindowSize' : Window size for the fit. Default: 4*sigma, i.e., [-4*sigma ... 4*sigma]^2
 %
-% Outputs:  
+% Outputs:
 %             pstruct : output structure with Gaussian parameters, standard deviations, p-values
 %                mask : mask of significant (in amplitude) pixels
 %               imgLM : image of local maxima
@@ -67,7 +67,7 @@ fg = conv2(g', g, imgXT, 'valid');
 fu = conv2(u', u, imgXT, 'valid');
 fu2 = conv2(u', u, imgXT.^2, 'valid');
 
-% Laplacian of Gaussian - edge detection 
+% Laplacian of Gaussian - edge detection
 gx2 = g.*x.^2;
 imgLoG = 2*fg/sigma^2 - (conv2(g, gx2, imgXT, 'valid')+conv2(gx2, g, imgXT, 'valid'))/sigma^4;
 imgLoG = imgLoG / (2*pi*sigma^2);
@@ -85,25 +85,25 @@ c_est = (fu - A_est*gsum)/n;
 if ip.Results.Prefilter
     J = [g(:) ones(n,1)]; % g_dA g_dc
     C = inv(J'*J);
-    
+
     f_c = fu2 - 2*c_est.*fu + n*c_est.^2; % f-c
     RSS = A_est.^2*g2sum - 2*A_est.*(fg - c_est*gsum) + f_c;
     RSS(RSS<0) = 0; % negative numbers may result from machine epsilon/roundoff precision
     sigma_e2 = RSS/(n-3);
-    
+
     sigma_A = sqrt(sigma_e2*C(1,1));
-    
+
     % standard deviation of residuals
     sigma_res = sqrt(RSS/(n-1));
-    
+
     kLevel = norminv(1-alpha/2.0, 0, 1);
-    
+
     SE_sigma_c = sigma_res/sqrt(2*(n-1)) * kLevel;
     df2 = (n-1) * (sigma_A.^2 + SE_sigma_c.^2).^2 ./ (sigma_A.^4 + SE_sigma_c.^4);
     scomb = sqrt((sigma_A.^2 + SE_sigma_c.^2)/n);
     T = (A_est - sigma_res*kLevel) ./ scomb;
     pval = tcdf(-T, df2);
-    
+
     % mask of admissible positions for local maxima
     mask = pval < 0.05;
 else
@@ -118,31 +118,31 @@ imgLM = allMax .* mask;
 
 pstruct = [];
 if sum(imgLM(:))~=0 % no local maxima found, likely a background image
-    
+
     if ip.Results.RefineMaskLoG
         % -> set threshold in LoG domain
         logThreshold = min(imgLoG(imgLM~=0));
         logMask = imgLoG >= logThreshold;
-        
+
         % combine masks
         mask = mask | logMask;
     end
-    
+
     % re-select local maxima
     imgLM = allMax .* mask;
-    
+
     % apply exclusion mask
     if ~isempty(ip.Results.Mask)
         imgLM(ip.Results.Mask==0) = 0;
     end
-    
-    
+
+
     [lmy, lmx] = find(imgLM~=0);
-    lmIdx = sub2ind(size(img), lmy, lmx);    
-    
+    lmIdx = sub2ind(size(img), lmy, lmx);
+
     if ~isempty(lmIdx)
         % run localization on local maxima
-        if ~ip.Results.FitMixtures            
+        if ~ip.Results.FitMixtures
             pstruct = fitGaussians2D(img, lmx, lmy, A_est(lmIdx), sigma*ones(1,length(lmIdx)),...
                 c_est(lmIdx), mode, 'mask', mask, 'alpha', alpha,...
                 'ConfRadius', ip.Results.ConfRadius, 'WindowSize', ip.Results.WindowSize);
@@ -150,7 +150,7 @@ if sum(imgLM(:))~=0 % no local maxima found, likely a background image
             pstruct = fitGaussianMixtures2D(img, lmx, lmy, A_est(lmIdx), sigma*ones(1,length(lmIdx)),...
                 c_est(lmIdx), 'mask', mask, 'alpha', alpha, 'maxM', ip.Results.MaxMixtures);
         end
-        
+
         % remove NaN values
         idx = ~isnan([pstruct.x]);
         if sum(idx)~=0
@@ -158,10 +158,10 @@ if sum(imgLM(:))~=0 % no local maxima found, likely a background image
             for k = 1:length(fnames)
                 pstruct.(fnames{k}) = pstruct.(fnames{k})(idx);
             end
-            
+
             % significant amplitudes
             idx = [pstruct.hval_Ar] == 1;
-            
+
             % eliminate duplicate positions (resulting from localization)
             if ip.Results.RemoveRedundant
                 pM = [pstruct.x' pstruct.y'];
@@ -172,7 +172,7 @@ if sum(imgLM(:))~=0 % no local maxima found, likely a background image
                     idx(idxKD{k}(RSS ~= min(RSS))) = 0;
                 end
             end
-            
+
             if sum(idx)>0
                 fnames = fieldnames(pstruct);
                 for k = 1:length(fnames)
@@ -181,7 +181,7 @@ if sum(imgLM(:))~=0 % no local maxima found, likely a background image
                 pstruct.hval_Ar = logical(pstruct.hval_Ar);
                 pstruct.hval_AD = logical(pstruct.hval_AD);
                 pstruct.isPSF = ~pstruct.hval_AD;
-                
+
                 % adjust mixture index if only a single component remains
                 if ip.Results.FitMixtures
                     mv = 0:max(pstruct.mixtureIndex);

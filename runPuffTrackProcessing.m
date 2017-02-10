@@ -300,20 +300,20 @@ rmlt= find([tracks.lifetime_s]<0.4);
 tracks(rmlt) = [];
 buffer(rmlt,:) = [];
 
-%(ZYW) Remove all tracks that start in first frame and have peak amplitude
+% (ZYW) Remove all tracks that start in first frame and have peak amplitude
 % in first frame of track.
-% rmft = [];
-% for i=1:numel(tracks)
-%   ampl = tracks(i).A + tracks(i).c;
-%   if tracks(i).start == 1
-%     [~, ii] = max(ampl);
-%     if ii == 1
-%       rmft = [rmft i];
-%     end
-%   end
-% end
-% tracks(rmft) = [];
-% buffer(rmft,:) = [];
+rmft = [];
+for i=1:numel(tracks)
+  ampl = tracks(i).A + tracks(i).c;
+  if tracks(i).start == 1
+    [~, ii] = max(ampl);
+    if ii == 1
+      rmft = [rmft i];
+    end
+  end
+end
+tracks(rmft) = [];
+buffer(rmft,:) = [];
 
 % remove tracks that fall into image boundary
 minx = round(arrayfun(@(t) min(t.x(:)), tracks));
@@ -497,7 +497,11 @@ if postprocess
     % Ic)  Single tracks cut at beginning or end
     % Id)  Single tracks, persistent
 
-    validGaps = arrayfun(@(t) max([t.gapStatus 4]), tracks)==4;
+    if ismember('gapStatus', fieldnames(tracks))
+        validGaps = arrayfun(@(t) max([t.gapStatus 4]), tracks)==4;
+    else
+        validGaps = zeros(1, numel(tracks));
+    end
     singleIdx = [tracks.nSeg]==1;
     vis = [tracks.visibility];
 
@@ -586,7 +590,12 @@ if postprocess
     %----------------------------------------------------------------------------
     % VI. Cut tracks with sequential events (hotspots) into individual tracks
     %----------------------------------------------------------------------------
-    splitCand = find([tracks.catIdx]==1 & arrayfun(@(i) ~isempty(i.gapIdx), tracks) & trackLengths>2); %(TP***) at least 0.2s/puff
+    %splitCand = find([tracks.catIdx]==1 & arrayfun(@(i) ~isempty(i.gapIdx), tracks) & trackLengths>4);
+    if ismember('gapIdx',fieldnames(tracks))
+        splitCand = find([tracks.catIdx]==1 & arrayfun(@(i) ~isempty(i.gapIdx), tracks) & trackLengths>2); %(TP***) at least 0.2s/puff
+    else
+        splitCand = [];
+    end
     % Loop through tracks and test whether gaps are at background intensity
     rmIdx = []; % tracks to remove from list after splitting
     newTracks = [];
@@ -693,7 +702,7 @@ if postprocess
     end
 
 
-%(TP***) remove all category 1 tracks with gaps 
+%(TP***) remove all category 1 tracks with gaps
 idx_Ia = find([tracks.catIdx]==1);
 for k = 1:numel(idx_Ia)
  if ~isempty(tracks(idx_Ia(k)).gapIdx)
@@ -748,17 +757,17 @@ end
         %(TP)Calculating tnpeaks, npeaks, pvp (% valid points)
         [a,~,~,d] = findpeaks(tracks(kj).Ac);
         tracks(kj).tnpeaks = numel(a);
-        p = findpeaks(tracks(kj).Ac, 'MinPeakProminence', mean(d)); 
-        tracks(kj).npeaks = numel(p); 
-        
+        p = findpeaks(tracks(kj).Ac, 'MinPeakProminence', mean(d));
+        tracks(kj).npeaks = numel(p);
+
         if tracks(kj).npeaks == 1 & tracks(kj).tnpeaks == 1
             tracks(kj).pvp = 0;
-        elseif tracks(kj).tnpeaks == 0 
+        elseif tracks(kj).tnpeaks == 0
             tracks(kj).pvp = 0;
         else
             tracks(kj).pvp = tracks(kj).npeaks/tracks(kj).tnpeaks;
         end
-        
+
         %(TP) Calculating hpeaks, php
         if tracks(kj).tnpeaks == 0
             tracks(kj).php = 0;
@@ -769,7 +778,7 @@ end
             tracks(kj).hpeaks = numel(p)-1; %not including max
             tracks(kj).php = tracks(kj).hpeaks/tracks(kj).tnpeaks;
         end
-        
+
         %(TP) cdiff: compares background after the max to background before
         %the max
         maxIdx = find([tracks(kj).Ac] == max([tracks(kj).Ac]));
@@ -779,20 +788,20 @@ end
             maxc = find([tracks(kj).c] == max([tracks(kj).c(maxIdx+1:end)]), 1, 'last');
             if maxIdx == 1
                 tracks(kj).cdiff = (tracks(kj).c(maxc) - [tracks(kj).c(maxIdx)])/max(tracks(kj).c);
-            else 
+            else
                 tracks(kj).cdiff = (tracks(kj).c(maxc) - mean([tracks(kj).c(1:maxIdx-1)]))/max(tracks(kj).c);
             end
         end
-        
+
         %(TP) to filter out low SNR tracks
-        tracks(i).percentC = (mean([tracks(kj).c]))/(mean([tracks(kj).Ac]));
-        
-        %(TP) Calculating diff, to get pallAdiff after 
-        tracks(kj).diff = tracks(kj).maxAc - mean([tracks(kj).Ac]); 
-        
+        tracks(kj).percentC = (mean([tracks(kj).c]))/(mean([tracks(kj).Ac]));
+
+        %(TP) Calculating diff, to get pallAdiff after
+        tracks(kj).diff = tracks(kj).maxAc - mean([tracks(kj).Ac]);
+
         fprintf('\b\b\b\b%3d%%', round(100*kj/numel(tracks)));
     end
-    
+
     %(TP) Calculating pallAdiff
     maxdiff = max([tracks.diff]);
     mindiff = min([tracks.diff]);

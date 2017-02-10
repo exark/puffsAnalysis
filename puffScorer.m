@@ -207,6 +207,7 @@ if exist([data.source 'Tracking' filesep fileName], 'file')==2
     yunit = round(maxInt ./ 10.^da) .* 10.^(da-1);
     maxInt = ceil(maxInt./yunit) .* yunit;
 end
+assignin('base','newtracks',tracks);
 fprintf('done.\n');
 
 hfig = figure('Units', 'pixels', 'Position', [250 250 1200 600],...
@@ -237,7 +238,7 @@ gax = axes('Parent', gph, 'Box', 'on', 'Units', 'pixels');
 
 montph = uipanel('Parent', hfig, 'Units', 'pixels', 'Title', ['Montage'],...
              'Position', [pos(3)/2 0 pos(3)/2 pos(4)]);
-         
+
 if isempty(oldIsPuff)
   isPuff = nan(numel(tracks),1);
 else
@@ -259,13 +260,13 @@ function quitCallback(varargin)
     delete(gcf);
     return;
 end
-    
+
 function refreshTrack()
     tcur = datasample(find(isnan(isPuff)), 1);
     cla(gax, 'reset');
     plotTrack(handles.data, tracks(tcur), 'Handle', gax);
     set(gph,'Title',['Intensity Plot Track: ' num2str(tcur)]);
-    
+
     delete(get(montph,'Children'));
     [itrack, xa, ya] = getTrackStack(tcur, 6, 'track');
     plotTrackMontageLocal(tracks(tcur), itrack, xa, ya, montph, 600, data.markers)
@@ -290,7 +291,7 @@ end
 function isPuffResult = returnResults(tn, res, isPuffBefore)
     isPuffBefore(tn) = res;
     isPuffResult = isPuffBefore;
-    disp(['Track ' num2str(tn) ' = ' num2str(res) ' (Scored ' num2str(length(find(~isnan(isPuffResult)))) '/' num2str(length(isPuffResult))]);
+    disp(['Track ' num2str(tn) ' = ' num2str(res) ' (Scored ' num2str(length(find(~isnan(isPuffResult)))) '/' num2str(length(isPuffResult)) ')']);
 end
 
 function plotTrackMontageLocal(track, trackStack, xa, ya, ph, width, labels)
