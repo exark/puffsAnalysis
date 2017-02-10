@@ -119,8 +119,9 @@ for i = 1:numel(paths)
         cPath{i} = fullfile(fileparts(fileparts(paths{i})), 'Classification');
         if ~(exist(cPath{i}, 'dir')==7)
         mkdir(cPath{i});
+        end
     end
-end 
+end
 
 %Properly formats inputs for command prompt
 puffapy = ['"' which('puffapy.py') '"'];

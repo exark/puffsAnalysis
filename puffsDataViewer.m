@@ -382,7 +382,7 @@ if exist([data.source ip.Results.RelativePath filesep fileName], 'file')==2 && i
             y(t) = round(nanmean(tracks(t).y(1,:)));
         end
         idx = sub2ind([ny nx], y, x);
-        tracks = tracks(cellMask(idx)==1);
+        %tracks = tracks(cellMask(idx)==1);
     end
     nt = numel(tracks);
     selIndex = true(1,nt);
@@ -748,8 +748,8 @@ set(hz, 'ActionPostCallback', @czoom);
         if ~isempty(tracks) && fidx~=1 && get(trackCheckbox, 'Value') && any(~isnan(X(fidx,:)) & selIndex(tstruct.idx))
             vidx = ~isnan(X(fidx,:)) & selIndex(tstruct.idx);
             delete(hpt);
-            set(handles.fAxes(1,1), 'ColorOrder', cmap(tstruct.idx(vidx),:));
-            hpt = plot(handles.fAxes(1,1), X(1:fidx,vidx), Y(1:fidx,vidx), 'HitTest', 'off');
+            %set(handles.fAxes(1,1), 'ColorOrder', cmap(tstruct.idx(vidx),:));
+            %hpt = plot(handles.fAxes(1,1), X(1:fidx,vidx), Y(1:fidx,vidx), 'HitTest', 'off');
             if get(gapCheckbox, 'Value')
                 hpg = plot(handles.fAxes(1,1), X(fidx,vidx & G(fidx,:)), Y(fidx,vidx & G(fidx,:)), 'o', 'Color', 'w', 'MarkerSize', 6, 'LineWidth', 1);
             end

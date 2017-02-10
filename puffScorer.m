@@ -140,7 +140,7 @@ if exist([data.source 'Tracking' filesep fileName], 'file')==2
             y(t) = round(nanmean(tracks(t).y(1,:)));
         end
         idx = sub2ind([ny nx], y, x);
-        tracks = tracks(cellMask(idx)==1);
+        %tracks = tracks(cellMask(idx)==1);
     end
     nt = numel(tracks);
     selIndex = true(1,nt);
