@@ -373,7 +373,6 @@ if exist([data.source ip.Results.RelativePath filesep fileName], 'file')==2 && i
     clear tmp;
 
     % apply cell mask
-<<<<<<< HEAD
     if ~isempty(cellMask)
         nt = numel(tracks);
         x = NaN(1,nt);
@@ -385,7 +384,7 @@ if exist([data.source ip.Results.RelativePath filesep fileName], 'file')==2 && i
         idx = sub2ind([ny nx], y, x);
         %tracks = tracks(cellMask(idx)==1);
     end
-=======
+
 %     if ~isempty(cellMask)
 %         nt = numel(tracks);
 %         x = NaN(1,nt);
@@ -397,7 +396,7 @@ if exist([data.source ip.Results.RelativePath filesep fileName], 'file')==2 && i
 %         idx = sub2ind([ny nx], y, x);
 %         tracks = tracks(cellMask(idx)==1);
 %     end
->>>>>>> d2560c6906e6c84ca29e1c7fa524dac84d4fd16e
+
     nt = numel(tracks);
     selIndex = true(1,nt);
 
