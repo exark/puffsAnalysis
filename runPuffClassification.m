@@ -56,6 +56,7 @@ secondFile = ip.Results.SecondFile;
 file = ip.Results.File;
 overwrite = ip.Results.Overwrite;
 
+load(file);
 nd = numel(data);
 for i = 1:nd
 % Finds proper path to file
@@ -104,6 +105,15 @@ for i = 1:nd
     if ~exist(fullfile(fileparts(fileparts(testPath)),'Classification')) || overwrite
         fprintf('Running Random Forest classification (%s)...\n',getShortPath(data(i)));
         main(trainPath, testPath, fields, classifier);
+        res = [data.source 'Classification' filesep 'RFresults.mat'];
+        res = load(res);
+        for i = 1:numel(res.puffs)
+            tracks(res.puffs(i)).isPuff = 1;
+        end
+        for i = 1:numel(res.nonpuffs)
+            tracks(res.nonpuffs(i)).isPuff = 2;
+        end
+        save(filePath,'tracks','-v7.3');
     else
         fprintf('\n Classification has already been run for ', testPath);
     end
@@ -118,11 +128,7 @@ for i = 1:numel(paths)
     if ~isempty(paths{i})
         cPath{i} = fullfile(fileparts(fileparts(paths{i})), 'Classification');
         if ~(exist(cPath{i}, 'dir')==7)
-<<<<<<< HEAD
         mkdir(cPath{i});
-=======
-            mkdir(cPath{i});
->>>>>>> d2560c6906e6c84ca29e1c7fa524dac84d4fd16e
         end
     end
 end
@@ -140,6 +146,5 @@ if ~isempty(testPath)
 end
 
 %Call command prompt to run puffapy.py
-setenv('DYLD_LIBRARY_PATH','/usr/local/lib/python3.5/site-packages/scipy/.dylibs');
-systemCommand = strjoin({'/usr/local/bin/python3' puffapy classifierPath trainPath fields testPath}, ' ');
+systemCommand = strjoin({'python' puffapy classifierPath trainPath fields testPath}, ' ');
 system(systemCommand);
