@@ -118,11 +118,7 @@ for i = 1:numel(paths)
     if ~isempty(paths{i})
         cPath{i} = fullfile(fileparts(fileparts(paths{i})), 'Classification');
         if ~(exist(cPath{i}, 'dir')==7)
-<<<<<<< HEAD
-        mkdir(cPath{i});
-=======
             mkdir(cPath{i});
->>>>>>> d2560c6906e6c84ca29e1c7fa524dac84d4fd16e
         end
     end
 end
