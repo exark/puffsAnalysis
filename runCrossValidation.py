@@ -71,8 +71,8 @@ def runCrossValidation(train, test, RFfile):
 	    precision   = np.append(precision, (precision_score(trainRes[test_index], classes)))
 	   # auroc       = np.append(auroc, (roc_auc_score(trainRes[test_index], classes)))
 	    accuracy    = np.append(accuracy, (accuracy_score(trainRes[test_index], classes)))
-	   # sensitivity = np.append(sensitivity, (recall_score(trainRes[test_index], classes)))
-	   # f1          = np.append(f1, (f1_score(trainRes[test_index], classes)))
+	    sensitivity = np.append(sensitivity, (recall_score(trainRes[test_index], classes)))
+	    f1          = np.append(f1, (f1_score(trainRes[test_index], classes)))
 	   # matthews    = np.append(matthews, (matthews_corrcoef(trainRes[test_index], classes)))
 	    #cma         = np.add(cma, (confusion_matrix(trainRes[test_index], classes)))
 
@@ -80,8 +80,8 @@ def runCrossValidation(train, test, RFfile):
 	# r2          = np.array(r2)
 	precision   = np.array(precision)
 	accuracy    = np.array(accuracy)
-	# sensitivity = np.array(sensitivity)
-	# f1          = np.array(f1)
+	sensitivity = np.array(sensitivity)
+	f1          = np.array(f1)
 	# auroc       = np.array(auroc)
 	# matthews    = np.array(matthews)
 
@@ -140,4 +140,6 @@ if __name__ == "__main__":
 	n.write('\n OOB Error: ' 	  + str(rf.oob_score_))
 	n.write('\n KF Accuracy: %0.2f (+/- %0.2f)' % (accuracy.mean(), accuracy.std() * 2))
 	n.write('\n KF Precision: %0.2f (+/- %0.2f)' % (precision.mean(), precision.std() * 2))
+	n.write('\n KF Sensitivity: %0.2f (+/- %0.2f)' % (sensitivity.mean(), sensitivity.std() * 2))
+	n.write('\n KF F1: %0.2f (+/- %0.2f)' % (f1.mean(), f1.std() * 2))
 	n.close()
