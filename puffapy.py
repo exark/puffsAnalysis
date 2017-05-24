@@ -5,7 +5,7 @@ import scipy.io as sio
 
 from mat2py import mat2py
 from runRandomForests import runRandomForests
-from runCrossValidation import runCrossValidation 
+from runCrossValidation import runCrossValidation
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Random Forest classification of tracks')
@@ -13,6 +13,7 @@ if __name__ == "__main__":
 	parser.add_argument('training', help="Numpy array or HDF5-encoded MATLAB file")
 	parser.add_argument('--fields', default = [], nargs="+", help="Field(s) to extract from .mat file")
 	parser.add_argument('--testing', dest='testing',default=[])
+	parser.add_argument('--crossval', action='store_true', help="Whether to run crossValidation or not.")
 	args = parser.parse_args()
 
 	traindir = op.join(op.dirname(op.dirname(args.training)),'Classification')
@@ -42,10 +43,11 @@ if __name__ == "__main__":
 
 	train = np.array(train.tolist())
 	test = np.array(test.tolist())
-	
+
 
 	nonpuffs, puffs, ntracks, rf = runRandomForests(train, test, args.RFfile, savedir)
-	accuracy, precision = runCrossValidation(train, test, rf)
+	if args.crossval
+		accuracy, precision = runCrossValidation(train, test, rf)
 
 	#Get feature importances from classifier
 	importances = rf.feature_importances_
@@ -60,8 +62,8 @@ if __name__ == "__main__":
 	n.write('\n Feature Importances: ')
 	for f in range(len(fields)-1):
 		n.write("\n\t %d. %s (%f)" % (f + 1, fields[indices[f]+1], importances[indices[f]]))
-	n.write('\n OOB Error: ' 	  + str(rf.oob_score_))
-	n.write('\n KF Accuracy: %0.2f (+/- %0.2f)' % (accuracy.mean(), accuracy.std() * 2))
-	n.write('\n KF Precision: %0.2f (+/- %0.2f)' % (precision.mean(), precision.std() * 2))
+	if args.crossval
+		n.write('\n OOB Error: ' 	  + str(rf.oob_score_))
+		n.write('\n KF Accuracy: %0.2f (+/- %0.2f)' % (accuracy.mean(), accuracy.std() * 2))
+		n.write('\n KF Precision: %0.2f (+/- %0.2f)' % (precision.mean(), precision.std() * 2))
 	n.close()
-

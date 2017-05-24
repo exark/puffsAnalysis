@@ -41,7 +41,7 @@ def runCrossValidation(train, test, RFfile):
 	testArr = np.nan_to_num(testArr)
 
 	if not op.exists(RFfile):
-		# Train the classifier 
+		# Train the classifier
 		rf = RandomForestClassifier(n_estimators = 500, oob_score = True, class_weight="balanced")
 		rf.fit(trainArr, trainRes)
 
@@ -85,7 +85,7 @@ def runCrossValidation(train, test, RFfile):
 	# auroc       = np.array(auroc)
 	# matthews    = np.array(matthews)
 
-	return accuracy, precision 
+	return accuracy, precision
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Random Forest classification of tracks')
@@ -121,7 +121,7 @@ if __name__ == "__main__":
 
 	train = np.array(train.tolist())
 	test = np.array(test.tolist())
-	
+
 	accuracy, precision = runCrossValidation(train, test, args.RFfile)
 
 	#Get feature importances from classifier
