@@ -19,9 +19,9 @@ from sklearn.metrics import confusion_matrix
 from mat2py import mat2py
 
 # runRandomForests builds a classifier based on train and runs it on test (generated from mat2py.py)
-#	Classifier is saved as RFfile. Classifier results are saved as RFresults.mat in savedir. 
-# 	Parameter values for tracks in each class label are returned. 
-# runRandomForests assumes first parameter passed is always the class variable. 
+#	Classifier is saved as RFfile. Classifier results are saved as RFresults.mat in savedir.
+# 	Parameter values for tracks in each class label are returned.
+# runRandomForests assumes first parameter passed is always the class variable.
 
 def runRandomForests(train, test, RFfile, savedir):
 
@@ -63,7 +63,7 @@ def runRandomForests(train, test, RFfile, savedir):
 
 	# Create 2D array for all class labels where for each one,
 	# class[1] is a list of track indices predicted to be that class
-	# class[2],[3],[4] (...) are that track's 1st, 2nd, 3rd (...) parameter values 
+	# class[2],[3],[4] (...) are that track's 1st, 2nd, 3rd (...) parameter values
 	nparams = np.zeros((testArr.shape[1]))
 	puffs = [[] for _ in range(len(nparams)+1)]
 	nonpuffs = [[] for _ in range(len(nparams)+1)]
@@ -78,7 +78,7 @@ def runRandomForests(train, test, RFfile, savedir):
 			for j, param in enumerate(nparams):
 				puffs[j+1].append(testArr[i,j])
 
-	# Create a dictionary of track indices for all class labels (adjust to 1 indexing for MATLAB) 
+	# Create a dictionary of track indices for all class labels (adjust to 1 indexing for MATLAB)
 	nonp= [x+1 for x in nonpuffs[0]]
 	p= [x+1 for x in puffs[0]]
 
@@ -86,13 +86,13 @@ def runRandomForests(train, test, RFfile, savedir):
 	ID = [nonp,p]
 	idx = dict(zip(labels, ID))
 
-	# Save dictionary as RF.mat 
+	# Save dictionary as RF.mat
 	sio.savemat(op.join(savedir,'RFresults'), idx)
-	ntracks = [len(nonpuffs[0]) + len(puffs[0])]
-	for x in [len(nonpuffs[0]), len(puffs[0])]: 
+	ntracks = [len(nonpuffs[0]) + len(puffs[0]) + len(maybe[0])]
+	for x in [len(nonpuffs[0]), len(puffs[0]), len(maybe[0])]:
 		ntracks.append(x)
 
-	return nonpuffs[1:], puffs[1:], ntracks, rf, 
+	return nonpuffs[1:], puffs[1:], ntracks, rf,
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Random Forest classification of tracks')
@@ -101,7 +101,7 @@ if __name__ == "__main__":
 	parser.add_argument('--fields', default = [], nargs="+", help="Field(s) to extract from .mat file")
 	parser.add_argument('--testing', dest='testing',default=[])
 	args = parser.parse_args()
- 
+
 	testdir = op.join(op.dirname(op.dirname(args.testing)),'Classification')
 	traindir = op.join(op.dirname(op.dirname(args.training)),'Classification')
 	savedir = traindir
@@ -110,10 +110,10 @@ if __name__ == "__main__":
 		train = np.load(args.training)
 		fields = list(train.dtype.names)
 	else:
-		if not args.fields or len(args.fields) <= 1: 
+		if not args.fields or len(args.fields) <= 1:
 			raise ValueError('Must import at least two parameters (including labeled variable) for RF classification')
 			quit()
-		else: 
+		else:
 			fields = args.fields
 		train = mat2py(args.training, fields, traindir)
 
@@ -132,7 +132,7 @@ if __name__ == "__main__":
 	nonpuffs, puffs, maybe, ntracks, rf = runRandomForests(train, test, args.RFfile, savedir)
 
 	#Get feature importances from classifier
-	importances = rf.feature_importances_ 
+	importances = rf.feature_importances_
 	std = np.std([tree.feature_importances_ for tree in rf.estimators_], axis=0)
 	indices = np.argsort(importances)[::-1]
 
