@@ -107,6 +107,7 @@ fillDark = hsv2rgb([hues(ch) 0.2 1]);
 fillLightBuffer = hsv2rgb([hues(ch) 0.4 0.85]);
 fillDarkBuffer = hsv2rgb([hues(ch) 0.2 0.85]);
 
+
 kLevel = norminv(1-ip.Results.Alpha/2.0, 0, 1);
 
 % Plot track

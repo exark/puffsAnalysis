@@ -120,8 +120,6 @@ runPuffTrackProcessing(data, opts{:});
 %-------------------------------------------------------------------------------
  runPuffClassification(data, 'RF classifier', 'IsTraining', false,...
     'Fields', 'isPuff hpeaks php cdiff pfallR2 pvp pallAcdiff npeaks tnpeaks lifetime_s percentC',...
-    'SecondFile', '/Users/exark/CMU Drive/Data/Puffs Analysis/Classifier/combinedScoredTracks.mat');
-% runPuffClassification(data, 'RF classifier', 'IsTraining', true,...
-%    'Fields', 'isPuff hpeaks php cdiff pfallR2 pvp pallAcdiff npeaks tnpeaks lifetime_s percentC');
+    'SecondFile', 'X:\PuffsClassifier\combinedScoredTracks.mat');
 
 res = runPuffsAnalysis(data);

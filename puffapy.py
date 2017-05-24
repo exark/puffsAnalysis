@@ -1,10 +1,11 @@
 import argparse
 import os.path as op
 import numpy as np
+import scipy.io as sio
 
 from mat2py import mat2py
 from runRandomForests import runRandomForests
-#from plotRandomForests import plotRandomForests
+from runCrossValidation import runCrossValidation 
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Random Forest classification of tracks')
@@ -19,6 +20,7 @@ if __name__ == "__main__":
 
 	if (args.training).endswith('.npy'):
 		train = np.load(args.training)
+		sio.savemat('test.mat', {'train': train})
 		fields = list(train.dtype.names)
 	else:
 		if not args.fields or len(args.fields) <= 1:
@@ -40,8 +42,10 @@ if __name__ == "__main__":
 
 	train = np.array(train.tolist())
 	test = np.array(test.tolist())
+	
 
-	nonpuffs, puffs, maybe, ntracks, rf = runRandomForests(train, test, args.RFfile, savedir)
+	nonpuffs, puffs, ntracks, rf = runRandomForests(train, test, args.RFfile, savedir)
+	accuracy, precision = runCrossValidation(train, test, rf)
 
 	#Get feature importances from classifier
 	importances = rf.feature_importances_
@@ -53,11 +57,11 @@ if __name__ == "__main__":
 	n.write('\n Params used: ' 	  + ','.join(fields[1:]))
 	n.write('\n Puffs/Total: ' 	  + str(ntracks[2]) + '/' + str(ntracks[0]) + ' (' + str((ntracks[2]/ntracks[0]) *100) + '%)')
 	n.write('\n Nonpuffs/Total: ' + str(ntracks[1]) + '/' + str(ntracks[0]) + ' (' + str((ntracks[1]/ntracks[0]) *100) + '%)')
-	n.write('\n Maybe/Total: ' 	  + str(ntracks[3]) + '/' + str(ntracks[0]) + ' (' + str((ntracks[3]/ntracks[0]) *100) + '%)')
-	n.write('\n OOB Error: ' 	  + str(rf.oob_score_))
 	n.write('\n Feature Importances: ')
 	for f in range(len(fields)-1):
 		n.write("\n\t %d. %s (%f)" % (f + 1, fields[indices[f]+1], importances[indices[f]]))
+	n.write('\n OOB Error: ' 	  + str(rf.oob_score_))
+	n.write('\n KF Accuracy: %0.2f (+/- %0.2f)' % (accuracy.mean(), accuracy.std() * 2))
+	n.write('\n KF Precision: %0.2f (+/- %0.2f)' % (precision.mean(), precision.std() * 2))
 	n.close()
 
-#	plotRandomForests(nonpuffs, puffs, maybe, fields[1:], savedir, p2D=[1,2], p3D=[0,1,2])

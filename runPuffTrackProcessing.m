@@ -28,8 +28,7 @@ function runPuffTrackProcessing(data, varargin)
 ip = inputParser;
 ip.CaseSensitive = false;
 ip.addRequired('data', @isstruct);
-%ip.addParamValue('Buffer', [5 5], @(x) numel(x)==2)
-ip.addParamValue('Buffer', [3 3], @(x) numel(x)==2); %(TP***): Changed buffer to 1 to account for shorter puff lengths
+ip.addParamValue('Buffer', [3 3], @(x) numel(x)==2); 
 ip.addParamValue('BufferAll', false, @islogical);
 ip.addParamValue('Overwrite', false, @islogical);
 ip.addParamValue('TrackerOutput', 'trackedFeatures.mat', @ischar);
@@ -89,18 +88,7 @@ kLevel = norminv(1-alpha/2.0, 0, 1); % ~2 std above background
 % Identify master/slave channels
 %=================================
 nCh = length(data.channels);
-
-% This checks to see which of the channels is the 'primary' channel
-% Primary = the first channel passed to loadConditionData
 mCh = strcmp(data.source, data.channels);
-
-% for k = 1:nCh
-%     data.framePaths{k} = data.framePaths{k}(frameIdx);
-% end
-%
-% data.maskPaths = data.maskPaths(frameIdx);
-% data.framerate = data.framerate*(frameIdx(2)-frameIdx(1));
-% data.movieLength = length(data.framePaths{1});
 
 
 % Setup pit detection radius. Create windows around point source (w3, w4)
@@ -156,7 +144,6 @@ tracks(1:nTracks) = struct('t', [], 'f', [],...
     'pallAcdiff',[], 'diff', [], 'cdiff', [],...
     'npeaks', [], 'tnpeaks', [], 'pvp', [],...
     'hpeaks', [], 'php', [],'isPuff', [0], 'catIdx', []);
-    %(TP):isPuff-> 0 = maybe, 1 = puff, 2 = nonpuff
 
 % track field names
 idx = structfun(@(i) size(i,2)==size(frameInfo(1).x,2), frameInfo(1));
@@ -194,11 +181,6 @@ for k = 1:nTracks
         end
         segLengths(s) = bounds(2)-bounds(1)+1;
 
-        % remove short (<4 frames) merging/splitting branches if:
-        % -the segment length is a single frame
-        % -the segment is splitting and merging from/to the same parent
-        % -short segment merges, segment starts after track start
-        % -short segment splits, segment ends before track end - (ZYW) Why?
         msIdx(s) = segLengths(s)==1 || (segLengths(s)<4 && ( diff(ievents(:,4))==0 ||...
             (isnan(ievents(1,4)) && ~isnan(ievents(2,4)) && ievents(1,1)>seqOfEvents(1,1)) ||...
             (isnan(ievents(2,4)) && ~isnan(ievents(1,4)) && ievents(2,1)<seqOfEvents(end,1)) ));
@@ -488,35 +470,7 @@ end
 % Run post-processing
 %============================================================================
 if postprocess
-    %----------------------------------------------------------------------------
-    % I. Assign category to each track
-    %----------------------------------------------------------------------------
-    % Categories:
-    % Ia)  Single tracks with valid gaps
-    % Ib)  Single tracks with invalid gaps
-    % Ic)  Single tracks cut at beginning or end
-    % Id)  Single tracks, persistent
 
-    if ismember('gapStatus', fieldnames(tracks))
-        validGaps = arrayfun(@(t) max([t.gapStatus 4]), tracks)==4;
-    else
-        validGaps = zeros(1, numel(tracks));
-    end
-    singleIdx = [tracks.nSeg]==1;
-    vis = [tracks.visibility];
-
-    mask_Ia = singleIdx & validGaps & vis==1;
-    mask_Ib = singleIdx & ~validGaps & vis==1;
-    idx_Ia = find(mask_Ia);
-    idx_Ib = find(mask_Ib);
-    trackLengths = [tracks.end]-[tracks.start]+1;
-
-    C = [mask_Ia;
-        2*mask_Ib];
-
-    C = num2cell(sum(C,1));
-    % assign category
-    [tracks.catIdx] = deal(C{:});
 
     %----------------------------------------------------------------------------
     % III. Process 'Ib' tracks:
@@ -745,9 +699,10 @@ end
         if any(isnan([tracks(kj).c]))
             tracks(kj).c = inpaint_nans([tracks(kj).c]);
         end
-
+        
+        %Power fit on decay 
         [fitted_fall fgof numFall] = fallFit(tracks(kj));
-        tracks(kj).pfallR2 = fgof.rsquare; %Power Fit R^2 of fall portion
+        tracks(kj).pfallR2 = fgof.rsquare; 
 
         %(TP)Max amplitude and amplitude normalized 0-1
         tracks(kj).Ac = [tracks(kj).A] + [tracks(kj).c];
