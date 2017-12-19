@@ -46,8 +46,8 @@ if __name__ == "__main__":
 
 
 	nonpuffs, puffs, ntracks, rf = runRandomForests(train, test, args.RFfile, savedir)
-	if args.crossval
-		accuracy, precision = runCrossValidation(train, test, rf)
+	if args.crossval:
+		accuracy, precision, sensitivity, f1 = runCrossValidation(train, args.RFfile)
 
 	#Get feature importances from classifier
 	importances = rf.feature_importances_
@@ -62,8 +62,8 @@ if __name__ == "__main__":
 	n.write('\n Feature Importances: ')
 	for f in range(len(fields)-1):
 		n.write("\n\t %d. %s (%f)" % (f + 1, fields[indices[f]+1], importances[indices[f]]))
-	if args.crossval
-		n.write('\n OOB Error: ' 	  + str(rf.oob_score_))
-		n.write('\n KF Accuracy: %0.2f (+/- %0.2f)' % (accuracy.mean(), accuracy.std() * 2))
-		n.write('\n KF Precision: %0.2f (+/- %0.2f)' % (precision.mean(), precision.std() * 2))
+	# if args.crossval
+	# 	n.write('\n OOB Error: ' 	  + str(rf.oob_score_))
+	# 	n.write('\n KF Accuracy: %0.2f (+/- %0.2f)' % (accuracy.mean(), accuracy.std() * 2))
+	# 	n.write('\n KF Precision: %0.2f (+/- %0.2f)' % (precision.mean(), precision.std() * 2))
 	n.close()

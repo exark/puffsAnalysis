@@ -479,38 +479,38 @@ if postprocess
     % Determine critical max. intensity values from class Ia tracks, per lifetime cohort
 
     % # cohorts
-    nc = numel(cohortBounds)-1;
-
-    % max intensities of all 'Ia' tracks
-    maxInt = arrayfun(@(i) max(i.A(mCh,:)), tracks(idx_Ia));
-    maxIntDistr = cell(1,nc);
-    mappingThresholdMaxInt = zeros(1,nc);
-    lft_Ia = [tracks(idx_Ia).lifetime_s];
-    for i = 1:nc
-        maxIntDistr{i} = maxInt(cohortBounds(i)<=lft_Ia & lft_Ia<cohortBounds(i+1));
-        % critical values for test
-        mappingThresholdMaxInt(i) = prctile(maxIntDistr{i}, 2.5);
-    end
-
-    % get lifetime histograms before change
-    processingInfo.lftHists.before = getLifetimeHistogram(data, tracks);
-
-    % Criteria for mapping:
-    % - max intensity must be within 2.5th percentile of max. intensity distribution for 'Ia' tracks
-    % - lifetime >= 5 frames (at 4 frames: track = [x o o x])
-
-    % assign category 1 to tracks that match criteria
-    for k = 1:numel(idx_Ib);
-        i = idx_Ib(k);
-
-        % get cohort idx for this track (logical)
-        cIdx = cohortBounds(1:nc)<=tracks(i).lifetime_s & tracks(i).lifetime_s<cohortBounds(2:nc+1);
-
-        if max(tracks(i).A(mCh,:)) >= mappingThresholdMaxInt(cIdx) && trackLengths(i)>4
-            tracks(i).catIdx = 1;
-        end
-    end
-    processingInfo.lftHists.after = getLifetimeHistogram(data, tracks);
+%     nc = numel(cohortBounds)-1;
+% 
+%     % max intensities of all 'Ia' tracks
+%     maxInt = arrayfun(@(i) max(i.A(mCh,:)), tracks(idx_Ia));
+%     maxIntDistr = cell(1,nc);
+%     mappingThresholdMaxInt = zeros(1,nc);
+%     lft_Ia = [tracks(idx_Ia).lifetime_s];
+%     for i = 1:nc
+%         maxIntDistr{i} = maxInt(cohortBounds(i)<=lft_Ia & lft_Ia<cohortBounds(i+1));
+%         % critical values for test
+%         mappingThresholdMaxInt(i) = prctile(maxIntDistr{i}, 2.5);
+%     end
+% 
+%     % get lifetime histograms before change
+%     processingInfo.lftHists.before = getLifetimeHistogram(data, tracks);
+% 
+%     % Criteria for mapping:
+%     % - max intensity must be within 2.5th percentile of max. intensity distribution for 'Ia' tracks
+%     % - lifetime >= 5 frames (at 4 frames: track = [x o o x])
+% 
+%     % assign category 1 to tracks that match criteria
+%     for k = 1:numel(idx_Ib);
+%         i = idx_Ib(k);
+% 
+%         % get cohort idx for this track (logical)
+%         cIdx = cohortBounds(1:nc)<=tracks(i).lifetime_s & tracks(i).lifetime_s<cohortBounds(2:nc+1);
+% 
+%         if max(tracks(i).A(mCh,:)) >= mappingThresholdMaxInt(cIdx) && trackLengths(i)>4
+%             tracks(i).catIdx = 1;
+%         end
+%     end
+%     processingInfo.lftHists.after = getLifetimeHistogram(data, tracks);
 
     %----------------------------------------------------------------------------
     % IV. Apply threshold on buffer intensities
@@ -522,30 +522,31 @@ if postprocess
     Tbuffer = 2;
 
     % loop through cat. Ia tracks
-    idx_Ia = find([tracks.catIdx]==1);
-    for k = 1:numel(idx_Ia)
-        i = idx_Ia(k);
-
-        if ~isempty(tracks(i).startBuffer) && ~isempty(tracks(i).endBuffer)
-            % H0: A = background (p-value >= 0.05)
-            sbin = tracks(i).startBuffer.pval_Ar(mCh,:) < 0.05; % positions with signif. signal
-            ebin = tracks(i).endBuffer.pval_Ar(mCh,:) < 0.05;
-            [sl, sv] = binarySegmentLengths(sbin);
-            [el, ev] = binarySegmentLengths(ebin);
-            if ~any(sl(sv==0)>=Tbuffer) || ~any(el(ev==0)>=Tbuffer) ||...
-                    max([tracks(i).startBuffer.A(mCh,:)+tracks(i).startBuffer.c(mCh,:)...
-                    tracks(i).endBuffer.A(mCh,:)+tracks(i).endBuffer.c(mCh,:)]) >...
-                    max(tracks(i).A(mCh,:)+tracks(i).c(mCh,:))
-                tracks(i).catIdx = 2;
-            end
-        end
-    end
+%     (ZYW) commented out because we don't need this for puffs.
+%     idx_Ia = find([tracks.catIdx]==1);
+%     for k = 1:numel(idx_Ia)
+%         i = idx_Ia(k);
+% 
+%         if ~isempty(tracks(i).startBuffer) && ~isempty(tracks(i).endBuffer)
+%             % H0: A = background (p-value >= 0.05)
+%             sbin = tracks(i).startBuffer.pval_Ar(mCh,:) < 0.05; % positions with signif. signal
+%             ebin = tracks(i).endBuffer.pval_Ar(mCh,:) < 0.05;
+%             [sl, sv] = binarySegmentLengths(sbin);
+%             [el, ev] = binarySegmentLengths(ebin);
+%             if ~any(sl(sv==0)>=Tbuffer) || ~any(el(ev==0)>=Tbuffer) ||...
+%                     max([tracks(i).startBuffer.A(mCh,:)+tracks(i).startBuffer.c(mCh,:)...
+%                     tracks(i).endBuffer.A(mCh,:)+tracks(i).endBuffer.c(mCh,:)]) >...
+%                     max(tracks(i).A(mCh,:)+tracks(i).c(mCh,:))
+%                 tracks(i).catIdx = 2;
+%             end
+%         end
+%     end
 
     %----------------------------------------------------------------------------
     % VI. Cut tracks with sequential events (hotspots) into individual tracks
     %----------------------------------------------------------------------------
     %splitCand = find([tracks.catIdx]==1 & arrayfun(@(i) ~isempty(i.gapIdx), tracks) & trackLengths>4);
-    if ismember('gapIdx',fieldnames(tracks))
+    if ismember('gapIdx',fieldnames(tracks)) && ~isempty(find([tracks.catIdx]==1))
         splitCand = find([tracks.catIdx]==1 & arrayfun(@(i) ~isempty(i.gapIdx), tracks) & trackLengths>2); %(TP***) at least 0.2s/puff
     else
         splitCand = [];
@@ -648,21 +649,23 @@ if postprocess
             (tracks(i).y(mCh,2:end) - tracks(i).y(mCh,1:end-1)).^2);
         medianDist(i) = nanmedian(dists{i});
     end
-    p95 = prctile(medianDist, 95);
-    for i = 1:nt
-        if sum(dists{i}>p95)>4 && tracks(i).catIdx==1
-            tracks(i).catIdx = 2;
-        end
-    end
+%     p95 = prctile(medianDist, 95);
+%     for i = 1:nt
+%         if sum(dists{i}>p95)>4 && tracks(i).catIdx==1
+%             tracks(i).catIdx = 2;
+%         end
+%     end
 
 
 %(TP***) remove all category 1 tracks with gaps
-idx_Ia = find([tracks.catIdx]==1);
-for k = 1:numel(idx_Ia)
- if ~isempty(tracks(idx_Ia(k)).gapIdx)
-     tracks(idx_Ia(k)).catIdx = 2;
- end
-end
+%(ZYW) commented out for dealing with puff movies that have no catIdx==1
+% tracks (11/3/17)
+% idx_Ia = find([tracks.catIdx]==1);
+% for k = 1:numel(idx_Ia)
+%  if ~isempty(tracks(idx_Ia(k)).gapIdx)
+%      tracks(idx_Ia(k)).catIdx = 2;
+%  end
+% end
 
     %==========================================
     % Compute displacement statistics

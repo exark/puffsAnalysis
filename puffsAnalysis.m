@@ -101,7 +101,7 @@ opts = {'Overwrite', ip.Results.Overwrite};
 %-------------------------------------------------------------------------------
 % 1) Detection
 %-------------------------------------------------------------------------------
-runDetection(data, 'SigmaSource', ip.Results.GaussianPSF, 'Master', ip.Results.MasterCh,  'Alpha', 0.01, opts{:});
+runDetection(data, 'SigmaSource', ip.Results.GaussianPSF, 'Master', ip.Results.MasterCh,  'Alpha', 0.01, 'Overwrite',false);
 cmap = plotPSNRDistribution(data, 'Pool', false, 'Channel', ip.Results.MasterCh);
 
 %-------------------------------------------------------------------------------
@@ -120,6 +120,6 @@ runPuffTrackProcessing(data, opts{:});
 %-------------------------------------------------------------------------------
  runPuffClassification(data, 'RF classifier', 'IsTraining', false,...
     'Fields', 'isPuff hpeaks php cdiff pfallR2 pvp pallAcdiff npeaks tnpeaks lifetime_s percentC',...
-    'SecondFile', 'X:\PuffsClassifier\combinedScoredTracks.mat');
+    'SecondFile', '/Users/exark/CMU Drive/Data/Puffs Analysis/Classifier/globalTrain.mat');
 
-res = runPuffsAnalysis(data);
+[res.raw, res.nmean, res.nmed, res.n] = extractComplexData(data);

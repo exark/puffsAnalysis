@@ -379,17 +379,17 @@ if exist([data.source ip.Results.RelativePath filesep fileName], 'file')==2 && i
         end
     end
     % apply cell mask
-    if ~isempty(cellMask)
-        nt = numel(tracks);
-        x = NaN(1,nt);
-        y = NaN(1,nt);
-        for t = 1:nt
-            x(t) = round(nanmean(tracks(t).x(1,:)));
-            y(t) = round(nanmean(tracks(t).y(1,:)));
-        end
-        idx = sub2ind([ny nx], y, x);
-        tracks = tracks(cellMask(idx)==1);
-    end
+%     if ~isempty(cellMask)
+%         nt = numel(tracks);
+%         x = NaN(1,nt);
+%         y = NaN(1,nt);
+%         for t = 1:nt
+%             x(t) = round(nanmean(tracks(t).x(1,:)));
+%             y(t) = round(nanmean(tracks(t).y(1,:)));
+%         end
+%         idx = sub2ind([ny nx], y, x);
+%         tracks = tracks(cellMask(idx)==1);
+%     end
     nt = numel(tracks);
     selIndex = true(1,nt);
 

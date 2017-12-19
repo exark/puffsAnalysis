@@ -1,4 +1,4 @@
-function [rawResults, normalizedMeanResults, normalizedMedianResults, nPuffs] = extractComplexPuffData(dataStruct) 
+function [rawResults, normalizedMeanResults, normalizedMedianResults, nPuffs] = extractComplexNonPuffData(dataStruct) 
     rawResults = [];
     normalizedMeanResults = [];
     normalizedMedianResults = [];

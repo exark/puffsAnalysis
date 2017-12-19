@@ -1,4 +1,4 @@
-function [rawResults, normalizedMeanResults, normalizedMedianResults, nPuffs] = extractComplexPuffData(dataStruct) 
+function [rawResults, normalizedMeanResults, normalizedMedianResults, nPuffs] = extractComplexData(dataStruct) 
     rawResults = [];
     normalizedMeanResults = [];
     normalizedMedianResults = [];
@@ -6,11 +6,11 @@ function [rawResults, normalizedMeanResults, normalizedMedianResults, nPuffs] = 
     
     for i=1:numel(dataStruct)
         load([dataStruct(i).source filesep 'Tracking/ProcessedTracks.mat'], 'tracks');
-        load([dataStruct(i).source filesep 'Classification/RFResults.mat'], 'nonpuffs');
+        load([dataStruct(i).source filesep 'Classification/RFResults.mat'], 'puffs');
         rR = [];
         nmeanR = [];
         nmedianR = [];
-        for j=nonpuffs
+        for j=puffs
             
             [peak, time_to_peak] = max(tracks(j).Ac);
             
@@ -37,6 +37,13 @@ function [rawResults, normalizedMeanResults, normalizedMedianResults, nPuffs] = 
             % cell_num - lifetime - int_density - start frame -
             %   time_to_peak tau1/2 plateau
             datum = [i tracks(j).lifetime_s trapz(tracks(j).Ac) tracks(j).start ((time_to_peak*0.1) - 0.1) tau_one_half*0.1 plateau*0.1 mean(tracks(j).x)/dataStruct(i).imagesize(2) mean(tracks(j).y)/dataStruct(i).imagesize(1)];
+            % - 1, cell number
+            % - 2, lifetime
+            % - 3, int density
+            % - 4, track start frame
+            % - 5, time to peak
+            % - 6, t1/2
+            % - 7, plateau
             rR = [rR; datum];
             nmeanR = [nmeanR; datum];
             nmedianR = [nmedianR; datum];
@@ -48,7 +55,7 @@ function [rawResults, normalizedMeanResults, normalizedMedianResults, nPuffs] = 
         rawResults = [rawResults; rR];
         normalizedMeanResults = [normalizedMeanResults; nmeanR];
         normalizedMedianResults = [normalizedMedianResults; nmedianR];
-        nPuffs = [nPuffs; numel(nonpuffs)];
+        nPuffs = [nPuffs; numel(puffs)];
     end
 
 end

@@ -47,7 +47,7 @@ def runRandomForests(train, test, RFfile, savedir):
 	testArr = np.nan_to_num(testArr)
 
 	if not op.exists(RFfile):
-		# Train the classifier 
+		# Train the classifier
 		rf = RandomForestClassifier(n_estimators = 500, oob_score = True, class_weight="balanced")
 		rf.fit(trainArr, trainRes)
 
@@ -59,7 +59,7 @@ def runRandomForests(train, test, RFfile, savedir):
 		rf = joblib.load(RFfile)
 
 	# Use classifier to predict class of all test data
-	testRes = rf.predict(testArr)
+	testRes = rf.predict_proba(testArr)
 
 	# Create 2D array for all class labels where for each one,
 	# class[1] is a list of track indices predicted to be that class
@@ -69,7 +69,7 @@ def runRandomForests(train, test, RFfile, savedir):
 	nonpuffs = [[] for _ in range(len(nparams)+1)]
 
 	for i, res in enumerate(testRes):
-		if res == 2:
+		if res[0] < 0.314917127072:
 			nonpuffs[0].append(i)
 			for j, param in enumerate(nparams):
 				nonpuffs[j+1].append(testArr[i,j])
@@ -88,8 +88,8 @@ def runRandomForests(train, test, RFfile, savedir):
 
 	# Save dictionary as RF.mat
 	sio.savemat(op.join(savedir,'RFresults'), idx)
-	ntracks = [len(nonpuffs[0]) + len(puffs[0]) + len(maybe[0])]
-	for x in [len(nonpuffs[0]), len(puffs[0]), len(maybe[0])]:
+	ntracks = [len(nonpuffs[0]) + len(puffs[0])]
+	for x in [len(nonpuffs[0]), len(puffs[0])]:
 		ntracks.append(x)
 
 	return nonpuffs[1:], puffs[1:], ntracks, rf,
@@ -129,7 +129,7 @@ if __name__ == "__main__":
 	train = np.array(train.tolist())
 	test = np.array(test.tolist())
 
-	nonpuffs, puffs, maybe, ntracks, rf = runRandomForests(train, test, args.RFfile, savedir)
+	nonpuffs, puffs, ntracks, rf = runRandomForests(train, test, args.RFfile, savedir)
 
 	#Get feature importances from classifier
 	importances = rf.feature_importances_
