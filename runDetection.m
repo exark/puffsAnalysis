@@ -118,7 +118,7 @@ parfor k = 1:data.movieLength
     % deviations, p-values and mask at column corresponding to frame k
     % is filled with all the significant pixels (in amplitude)
     [pstruct, mask(:,:,k)] = pointSourceDetection(img, sigma(mCh), 'Alpha', opts.Alpha,...
-        'Mask', opts.CellMask, 'RemoveRedundant', opts.RemoveRedundant, 'WindowSize', ceil(6*sigma(mCh))); %#ok<PFBNS>
+        'Mask', opts.CellMask, 'RemoveRedundant', opts.RemoveRedundant, 'WindowSize', ceil(10*sigma(mCh))); %#ok<PFBNS>
 
     if ~isempty(pstruct)
         pstruct.s = sigma;

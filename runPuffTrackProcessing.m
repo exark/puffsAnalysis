@@ -28,7 +28,7 @@ function runPuffTrackProcessing(data, varargin)
 ip = inputParser;
 ip.CaseSensitive = false;
 ip.addRequired('data', @isstruct);
-ip.addParamValue('Buffer', [3 3], @(x) numel(x)==2); 
+ip.addParamValue('Buffer', [3 3], @(x) numel(x)==2);
 ip.addParamValue('BufferAll', false, @islogical);
 ip.addParamValue('Overwrite', false, @islogical);
 ip.addParamValue('TrackerOutput', 'trackedFeatures.mat', @ischar);
@@ -480,7 +480,7 @@ if postprocess
 
     % # cohorts
 %     nc = numel(cohortBounds)-1;
-% 
+%
 %     % max intensities of all 'Ia' tracks
 %     maxInt = arrayfun(@(i) max(i.A(mCh,:)), tracks(idx_Ia));
 %     maxIntDistr = cell(1,nc);
@@ -491,21 +491,21 @@ if postprocess
 %         % critical values for test
 %         mappingThresholdMaxInt(i) = prctile(maxIntDistr{i}, 2.5);
 %     end
-% 
+%
 %     % get lifetime histograms before change
 %     processingInfo.lftHists.before = getLifetimeHistogram(data, tracks);
-% 
+%
 %     % Criteria for mapping:
 %     % - max intensity must be within 2.5th percentile of max. intensity distribution for 'Ia' tracks
 %     % - lifetime >= 5 frames (at 4 frames: track = [x o o x])
-% 
+%
 %     % assign category 1 to tracks that match criteria
 %     for k = 1:numel(idx_Ib);
 %         i = idx_Ib(k);
-% 
+%
 %         % get cohort idx for this track (logical)
 %         cIdx = cohortBounds(1:nc)<=tracks(i).lifetime_s & tracks(i).lifetime_s<cohortBounds(2:nc+1);
-% 
+%
 %         if max(tracks(i).A(mCh,:)) >= mappingThresholdMaxInt(cIdx) && trackLengths(i)>4
 %             tracks(i).catIdx = 1;
 %         end
@@ -526,7 +526,7 @@ if postprocess
 %     idx_Ia = find([tracks.catIdx]==1);
 %     for k = 1:numel(idx_Ia)
 %         i = idx_Ia(k);
-% 
+%
 %         if ~isempty(tracks(i).startBuffer) && ~isempty(tracks(i).endBuffer)
 %             % H0: A = background (p-value >= 0.05)
 %             sbin = tracks(i).startBuffer.pval_Ar(mCh,:) < 0.05; % positions with signif. signal
@@ -670,8 +670,8 @@ if postprocess
     %==========================================
     % Compute displacement statistics
     %==========================================
-    % Only on valid tracks (Cat. Ia)
-    trackIdx = find([tracks.catIdx]<8);
+    % Calculate for all tracks because this is puffs not CCPs!
+    trackIdx = 1:numel(tracks);
     fprintf('Processing tracks (%s) - calculating statistics:     ', getShortPath(data));
     for ki = 1:numel(trackIdx)
         k = trackIdx(ki);
@@ -702,10 +702,10 @@ if postprocess
         if any(isnan([tracks(kj).c]))
             tracks(kj).c = inpaint_nans([tracks(kj).c]);
         end
-        
-        %Power fit on decay 
+
+        %Power fit on decay
         [fitted_fall fgof numFall] = fallFit(tracks(kj));
-        tracks(kj).pfallR2 = fgof.rsquare; 
+        tracks(kj).pfallR2 = fgof.rsquare;
 
         %(TP)Max amplitude and amplitude normalized 0-1
         tracks(kj).Ac = [tracks(kj).A] + [tracks(kj).c];

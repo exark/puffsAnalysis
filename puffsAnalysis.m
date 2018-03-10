@@ -101,7 +101,7 @@ opts = {'Overwrite', ip.Results.Overwrite};
 %-------------------------------------------------------------------------------
 % 1) Detection
 %-------------------------------------------------------------------------------
-runDetection(data, 'SigmaSource', ip.Results.GaussianPSF, 'Master', ip.Results.MasterCh,  'Alpha', 0.01, 'Overwrite',false);
+runDetection(data, 'SigmaSource', ip.Results.GaussianPSF, 'Master', ip.Results.MasterCh,  'Alpha', 0.01, 'Overwrite', ip.Results.Overwrite);
 cmap = plotPSNRDistribution(data, 'Pool', false, 'Channel', ip.Results.MasterCh);
 
 %-------------------------------------------------------------------------------

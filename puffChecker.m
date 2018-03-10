@@ -172,19 +172,19 @@ function quitCallback(varargin)
     delete(gcf);
     return;
 end
-    
+
 function refreshTrack()
     try
         tidx = datasample(find(isnan(validList)), 1);
     catch excep
-        disp('No more tracks! You done bro!');
+        disp('No more tracks! Time to relax, babe!');
         return
     end
     tcur = unknownList(tidx);
     cla(gax, 'reset');
     plotTrack(handles.data, tracks(tcur), 'Handle', gax);
     set(gph,'Title',['Intensity Plot Track: ' num2str(tcur)]);
-    
+
     delete(get(montph,'Children'));
     [itrack, xa, ya] = getTrackStack(tcur, 6, 'track');
     plotTrackMontageLocal(tracks(tcur), itrack, xa, ya, montph, 600, data.markers)

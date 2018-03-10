@@ -17,15 +17,20 @@ def mat2py(mfilepath, params, savedir):
 		#If we want to be more flexible with name of structs
 		# f = dict(h5py.File(mfilepath,'r'))
 		# k = list(f.keys())
-		# gp1 = f.get(k[1])
+		# tracks = f.get(k[1])
 
 		# Imports MATLAB struct and retrieves tracks
-		f = h5py.File(mfilepath,'r')
-		gp1 = f.get('tracks')
+		f = h5py.File(m1filepath,'r')
+		tracks = f.get('tracks')
 
 		for p in params:
-			# data is an ndarray of values for p for all tracks
-			data = [gp1[element[0]][:] for element in gp1[p]]
+
+			#Kludgy hack for dealing with MotionAnalysis struct
+			if p == 'MotionAnalysis':
+				data = [tracks[element[0]].get('totalDisplacement')[0][:] for element in tracks[p]]
+			else:
+				# data is an ndarray of values for p for all tracks
+				data = [tracks[element[0]][:] for element in tracks[p]]
 
 			# arr is built one param at a time to contain all params for all tracks
 			if p == params[0]:
