@@ -126,34 +126,34 @@ else
 end
 fprintf('done.\n');
 
-hfig = figure('Units', 'pixels', 'Position', [250 250 1200 600],...
+hfig = figure('Units', 'pixels', 'Position', [250 250 1200 800],...
     'PaperPositionMode', 'auto', 'Toolbar', 'none', 'Resize', 'on',...
     'CloseRequestFcn', @quitCallback,...
     'DefaultUicontrolUnits', 'pixels', 'Units', 'pixels', 'Name', 'PuffScorer');
 pos = get(hfig, 'Position');
 
 gcph = uipanel('Parent', hfig, 'Units', 'pixels', 'Title', 'Scoring:',...
-               'Position', [0 0 pos(3)/2 100]);
+               'Position', [0 100 pos(3)/2 100]);
 yesButton = uicontrol(gcph, 'Style', 'pushbutton', 'String', 'PUFF!',...
                       'Position', [50 25 100 50], 'FontSize', 26,...
                       'HorizontalAlignment','center',...
                       'Callback', @yesCallback);
-maybeButton = uicontrol(gcph, 'Style', 'pushbutton', 'String', 'MAYBE!',...
-                      'Position', [200 25 120 50], 'FontSize', 26,...
-                      'HorizontalAlignment','center',...
-                      'Callback', @maybeCallback);
 noButton = uicontrol(gcph, 'Style', 'pushbutton', 'String', 'NONPUFF!',...
-                      'Position', [370 25 180 50], 'FontSize', 26,...
+                      'Position', [220 25 180 50], 'FontSize', 26,...
                       'HorizontalAlignment','center',...
                       'Callback', @noCallback);
 
 gph = uipanel('Parent', hfig, 'Units', 'pixels', 'Title', ['Intensity Plot'],...
-             'Position', [0 100 pos(3)/2 pos(4)-100]);
+             'Position', [0 200 pos(3)/2 pos(4)-200]);
 gax = axes('Parent', gph, 'Box', 'on', 'Units', 'pixels');
 
 
 montph = uipanel('Parent', hfig, 'Units', 'pixels', 'Title', ['Montage'],...
-             'Position', [pos(3)/2 0 pos(3)/2 pos(4)]);
+             'Position', [0 0 pos(3) 100]);
+         
+movieh = uipanel('Parent', hfig, 'Units', 'pixels', 'Title', ['Movie'],...
+             'Position', [pos(3)/2 100 pos(3)/2 pos(4)-100]);
+movieax = axes('Parent', movieh, 'Box', 'on', 'Units', 'pixels');
 
 tidx = NaN;
 refreshTrack();
@@ -182,13 +182,15 @@ function refreshTrack()
     end
     tcur = unknownList(tidx);
     cla(gax, 'reset');
+    cla(movieax, 'reset');
     plotTrack(handles.data, tracks(tcur), 'Handle', gax);
     set(gph,'Title',['Intensity Plot Track: ' num2str(tcur)]);
 
     delete(get(montph,'Children'));
-    [itrack, xa, ya] = getTrackStack(tcur, 6, 'track');
-    plotTrackMontageLocal(tracks(tcur), itrack, xa, ya, montph, 600, data.markers)
-    set(gph,'Title',['Montage Track: ' num2str(tcur)]);
+    [itrack, xa, ya] = getTrackStack(tcur, 10, 'track');
+    set(montph,'Title',['Montage Track: ' num2str(tcur)]);
+    set(movieh,'Title',['Movie Track ' num2str(tcur)]);
+    plotTrackMontageLocal(tracks(tcur), itrack, xa, ya, montph, 1200, data.markers, movieax)
 end
 
 function yesCallback(varargin)
@@ -212,13 +214,9 @@ function validListResult = returnResults(idx, res, validListBefore)
     disp(['Track ' num2str(tcur) ' = ' num2str(res) ' (Valid/Maybe/Invalid/Total: ' num2str(length(find(validListResult==1))) '/' num2str(length(find(validListResult==3))) '/' num2str(length(find(validListResult==2))) '/' num2str(length(validListResult))]);
 end
 
-function plotTrackMontageLocal(track, trackStack, xa, ya, ph, width, labels)
+function plotTrackMontageLocal(track, trackStack, xa, ya, ph, width, labels, movieax)
 
 [nc, nf] = size(trackStack);
-
-fontName = 'Helvetica';
-fontSize = 14;
-framesPerRow = 20;
 
 if isempty(xa)
     w = (size(trackStack{1,1},2)-1)/2;
@@ -250,9 +248,11 @@ for c = 1:nc
 end
 
 % display with fixed #frames/width
+framesPerRow=40;
 [wxi, dxi, dci, nr, height] = getProportions(width, framesPerRow, nf, nc);
 
 % stack index si: x + (rowi-1)*nc*nx + (c-1)*nx
+im_for_movie(nf+1) = struct('cdata', [], 'colormap', []);
 for si = 1:nf
     x = rem(si-1,framesPerRow)+1;
     rowi = ceil(si/framesPerRow); % each row contains all channels
@@ -261,11 +261,17 @@ for si = 1:nf
         ha(c,si) = axes('Units', 'pixels', 'Parent', ph,...
             'Position', [(x-1)*(wxi+dxi) height-wxi-((rowi-1)*(nc*wxi+(nc-1)*dxi+dci)+(c-1)*(wxi+dxi)) wxi wxi],...
             'XLim', [0 wxi], 'YLim', [0 wxi]);
-        imagesc(xa{si}, ya{si}, trackStack{c, si}); axis image off; caxis(dRange(c,:));
+        frame = imagesc(xa{si}, ya{si}, trackStack{c, si}); axis image off; caxis(dRange(c,:));
+        frame = double(frame.CData-dRange(c,1))/double(dRange(c,2)-dRange(c,1));
+        im_for_movie(si).cdata = imresize(uint8(round(frame*255)),20);
+        im_for_movie(si).colormap = gray(256);
         hold on;
     end
 end
 colormap(gray(256));
+im_for_movie(nf + 1) = struct('cdata', im_for_movie(1).cdata*0, 'colormap', gray(256));
+set(movieax, 'Visible', 'Off')
+movie(movieax, im_for_movie, 100, 5);
 end
 
 
