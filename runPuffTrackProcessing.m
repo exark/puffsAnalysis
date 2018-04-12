@@ -143,7 +143,9 @@ tracks(1:nTracks) = struct('t', [], 'f', [],...
     'pfallR2', [], 'percentC', [],...
     'pallAcdiff',[], 'diff', [], 'cdiff', [],...
     'npeaks', [], 'tnpeaks', [], 'pvp', [],...
-    'hpeaks', [], 'php', [],'isPuff', [0], 'catIdx', []);
+    'hpeaks', [], 'php', [],'isPuff', [NaN], 'catIdx', [],...
+    'RSSm', [], 'ttp', [], 'deltaf', [], 'int_density', [], 'tau', [],...
+    'plateau', [], 'global_background', [], 'SNR', []);
 
 % track field names
 idx = structfun(@(i) size(i,2)==size(frameInfo(1).x,2), frameInfo(1));
@@ -756,6 +758,39 @@ if postprocess
 
         %(TP) Calculating diff, to get pallAdiff after
         tracks(kj).diff = tracks(kj).maxAc - mean([tracks(kj).Ac]);
+        
+        %(ZW) Adding in features RSSm, ttp, deltaf, int_density, tau, plateau
+        [peak, time_to_peak] = max(tracks(kj).Ac);
+        if ~isempty(tracks(kj).endBuffer)
+            Ac_with_buffer = [tracks(kj).Ac (tracks(kj).endBuffer.A + tracks(kj).endBuffer.c)];
+        else
+            Ac_with_buffer = tracks(kj).Ac;
+        end
+
+        tau_one_half = NaN;
+        for x=time_to_peak:numel(Ac_with_buffer)
+            if Ac_with_buffer(x) <= 0.5*peak
+                tau_one_half = x - time_to_peak;
+            end
+        end
+
+        plateau = 1;
+        for y=time_to_peak:numel(Ac_with_buffer)
+            if Ac_with_buffer(x) >= 0.9*peak
+                plateau = plateau + 1;
+            end
+        end
+        
+        tracks(kj).int_density = trapz(tracks(kj).Ac);
+        tracks(kj).ttp = ((time_to_peak*0.1) - 0.1);
+        tracks(kj).tau = tau_one_half*0.1;
+        tracks(kj).plateau = plateau*0.1;
+        tracks(kj).deltaf = peak/min(tracks(kj).Ac);
+        tracks(kj).RSSm = nanmean(tracks(kj).RSS);
+        
+        %(ZW) Adding SNR
+        tracks(kj).global_background = nanmean(frameInfo(tracks(kj).start).c);
+        tracks(kj).SNR = peak/nanmean(frameInfo(tracks(kj).f(time_to_peak)).c);
 
         fprintf('\b\b\b\b%3d%%', round(100*kj/numel(tracks)));
     end
