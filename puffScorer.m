@@ -355,7 +355,7 @@ for si = 1:nf
     end
 end
 colormap(gray(256));
-im_for_movie(nf + 1) = struct('cdata', im_for_movie(1).cdata*0, 'colormap', gray(256));
+im_for_movie(nf + 1) = struct('cdata', repmat(uint8(255), size(im_for_movie(1).cdata)), 'colormap', gray(256));
 set(movieax, 'Visible', 'Off')
 movie(movieax, im_for_movie, 100, 5);
 end
