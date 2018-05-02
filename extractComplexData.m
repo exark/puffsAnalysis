@@ -36,7 +36,7 @@ function [rawResults, normalizedMeanResults, normalizedMedianResults, nPuffs] = 
             
             % cell_num - lifetime - int_density - start frame -
             %   time_to_peak tau1/2 plateau
-            datum = [i tracks(j).lifetime_s trapz(tracks(j).Ac) tracks(j).start ((time_to_peak*0.1) - 0.1) tau_one_half*0.1 plateau*0.1 mean(tracks(j).x)/dataStruct(i).imagesize(2) mean(tracks(j).y)/dataStruct(i).imagesize(1)];
+            datum = [i tracks(j).lifetime_s trapz(tracks(j).Ac) tracks(j).start ((time_to_peak*0.1) - 0.1) tau_one_half*0.1 plateau*0.1 peak/min(tracks(j).Ac)];
             % - 1, cell number
             % - 2, lifetime
             % - 3, int density
@@ -44,6 +44,7 @@ function [rawResults, normalizedMeanResults, normalizedMedianResults, nPuffs] = 
             % - 5, time to peak
             % - 6, t1/2
             % - 7, plateau
+            % - 8, fmax/fmin
             rR = [rR; datum];
             nmeanR = [nmeanR; datum];
             nmedianR = [nmedianR; datum];
