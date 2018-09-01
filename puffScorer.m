@@ -258,17 +258,19 @@ function quitCallback(varargin)
     else
         disp('isPuff in base workspace appears newer, saving as isPuffNew only.');
     end
+    if exist('waith')
+        close(waith);
+    end
     delete(gcf);
     return;
 end
 
 function refreshTrack()
-    tcur = datasample(find(isnan(isPuff)), 1);
     cla(gax, 'reset');
     cla(movieax, 'reset');
+    tcur = datasample(find(isnan(isPuff)), 1);
     plotTrack(handles.data, tracks(tcur), 'Handle', gax);
     set(gph,'Title',['Intensity Plot Track: ' num2str(tcur)]);
-
     delete(get(montph,'Children'));
     [itrack, xa, ya] = getTrackStack(tcur, 10, 'track');
     set(montph,'Title',['Montage Track: ' num2str(tcur)]);
@@ -339,10 +341,13 @@ framesPerRow=40;
 
 % stack index si: x + (rowi-1)*nc*nx + (c-1)*nx
 im_for_movie(nf+1) = struct('cdata', [], 'colormap', []);
+% if nf > 40
+%     waith = waitbar(0,'Initializing');
+% end
 for si = 1:nf
     x = rem(si-1,framesPerRow)+1;
     rowi = ceil(si/framesPerRow); % each row contains all channels
-
+    
     for c = 1:nc
         ha(c,si) = axes('Units', 'pixels', 'Parent', ph,...
             'Position', [(x-1)*(wxi+dxi) height-wxi-((rowi-1)*(nc*wxi+(nc-1)*dxi+dci)+(c-1)*(wxi+dxi)) wxi wxi],...
@@ -353,11 +358,18 @@ for si = 1:nf
         im_for_movie(si).colormap = gray(256);
         hold on;
     end
+%     if nf > 40
+%         progress = si/nf;
+%         waitbar(progress, waith, sprintf('%d%%...',progress*100));
+%     end
+end
+if exist('waith')
+    close(waith);
 end
 colormap(gray(256));
 im_for_movie(nf + 1) = struct('cdata', repmat(uint8(255), size(im_for_movie(1).cdata)), 'colormap', gray(256));
 set(movieax, 'Visible', 'Off')
-movie(movieax, im_for_movie, 100, 5);
+movie(movieax, im_for_movie, 5, 20);
 end
 
 

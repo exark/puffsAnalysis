@@ -14,6 +14,7 @@ ip.addParamValue('Pool', true, @islogical);
 ip.addParamValue('DisplayMode', 'screen', @(x) any(strcmpi(x, {'screen', 'print'})));
 ip.addParamValue('Mode', 'all', @(x) any(strcmpi(x, {'all', 'max'})));
 ip.addParamValue('Channel', 1);
+ip.addParamValue('DisplayNames', {});
 ip.parse(data, varargin{:});
 ha = ip.Results.ha;
 
@@ -42,11 +43,16 @@ if ~ip.Results.Pool
     hp = zeros(1,nd);
     for i = 1:numel(data)
         fi = hist(psnr{i}, xi)/numel(psnr{i});
-        hp(i) = plot(xi, fi, '-', 'Color', cmap(i,:), 'LineWidth', 1);
+        hp(i) = plot(xi, fi, '-', 'Color', cmap(i,:), 'LineWidth', 1, 'DisplayName', num2str(i));
     end
-    ltext = arrayfun(@getMovieName, data, 'unif', 0);
-    hl = legend(hp(idx), ltext(idx));
+    if isempty(ip.Results.DisplayNames)
+        ltext = arrayfun(@getMovieName, data, 'unif', 0);
+        hl = legend(hp(idx), ltext(idx));
+    else
+        ltext = ip.Results.DisplayNames;
+        hl = legend(hp(idx), ltext{idx});
     set(hl, 'Interpreter', 'none', fset.tfont{:}, 'Box', 'on', 'EdgeColor', 'w');
+    end
 else
     psnr = [psnr{:}];
     fi = hist(psnr, xi)/numel(psnr);

@@ -146,6 +146,6 @@ if ~isempty(testPath)
 end
 
 %Call command prompt to run puffapy.py
-setenv('DYLD_LIBRARY_PATH','/usr/local/lib/python3.5/site-packages/scipy/.dylibs');
+setenv('DYLD_LIBRARY_PATH','/usr/local/lib/python3.6/site-packages/scipy/.dylibs');
 systemCommand = strjoin({'/usr/local/bin/python3' puffapy classifierPath trainPath fields testPath}, ' ');
 system(systemCommand);

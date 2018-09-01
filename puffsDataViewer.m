@@ -977,7 +977,7 @@ set(hz, 'ActionPostCallback', @czoom);
                   cmap = [0 1 0; 1 0 0; 0 0 1];
                   %isPuff =[tracks.isPuff];
                   %cmap = cmap(isPuff+1,:);
-                  cmap = cmap([tracks.isPuff],:);
+%                  cmap = cmap([tracks.isPuff],:);
                   
             case 'Lifetime'
                 lifetimes_f = round([tracks.lifetime_s]/data.framerate);
@@ -1305,6 +1305,7 @@ set(hz, 'ActionPostCallback', @czoom);
                 set(handles.trackSlider, 'Value', find(find(selIndex)==tcur)); % calls updateTrack
             end
         end
+        disp([num2str(x0) ', ' num2str(y0)]);
     end
 
 

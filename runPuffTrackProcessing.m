@@ -9,7 +9,7 @@
 %          'Frames' : Index array of frames if runTracking was called on a subset of frames.
 %      'Preprocess' : Perform preprocessing: discard single-frame tracks and decouple
 %                       simple compound tracks. Default: true
-%     'Postprocess' : Perform postprocessing: validation of tracks based on gap and
+%    'Postprocess' : Perform postprocessing: validation of tracks based on gap and
 %                       buffer intensities; splitting of erroneously linked trajectories.
 %                       Default: true
 %  'ForceDiffractionLimited' : Treat only diffraction-limited signals as valid tracks.
@@ -21,7 +21,7 @@
 % Notes: The buffer size influences the number of visible tracks. For a buffer size of
 %        5 frames, only tracks initiating in frame 6 are treated as valid.
 
-% Tiffany Phan & Zach Weinberg (2015)
+% Tiffany Phan & Zara Weinberg (2015)
 
 function runPuffTrackProcessing(data, varargin)
 
@@ -786,7 +786,13 @@ if postprocess
         tracks(kj).tau = tau_one_half*0.1;
         tracks(kj).plateau = plateau*0.1;
         tracks(kj).deltaf = peak/min(tracks(kj).Ac);
+        
+        %(ZW) Adding mean measurements
         tracks(kj).RSSm = nanmean(tracks(kj).RSS);
+        tracks(kj).isPSFm = nanmean(tracks(kj).isPSF);
+        tracks(kj).maskNm = nanmean(tracks(kj).maskN);
+        tracks(kj).mask_Arm = nanmean(tracks(kj).mask_Ar);
+        tracks(kj).pval_Arm = nanmean(tracks(kj).pval_Ar);
         
         %(ZW) Adding SNR
         tracks(kj).global_background = nanmean(frameInfo(tracks(kj).start).c);

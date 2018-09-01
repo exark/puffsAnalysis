@@ -102,7 +102,7 @@ opts = {'Overwrite', ip.Results.Overwrite};
 % 1) Detection
 %-------------------------------------------------------------------------------
 runDetection(data, 'SigmaSource', ip.Results.GaussianPSF, 'Master', ip.Results.MasterCh,  'Alpha', 0.01, 'Overwrite', ip.Results.Overwrite);
-cmap = plotPSNRDistribution(data, 'Pool', false, 'Channel', ip.Results.MasterCh);
+% cmap = plotPSNRDistribution(data, 'Pool', false, 'Channel', ip.Results.MasterCh);
 
 %-------------------------------------------------------------------------------
 % 2) Tracking
@@ -118,8 +118,9 @@ runPuffTrackProcessing(data, opts{:});
 %-------------------------------------------------------------------------------
 % 4) Random Forest Classification using Python
 %-------------------------------------------------------------------------------
- runPuffClassification(data, 'RF classifier', 'IsTraining', false,...
-    'Fields', 'isPuff hpeaks php cdiff pfallR2 pvp pallAcdiff npeaks tnpeaks lifetime_s percentC',...
-    'SecondFile', '/Users/exark/CMU Drive/Data/Puffs Analysis/Classifier/globalTrain.mat');
+%  runPuffClassification(data, 'RF classifier', 'IsTraining', false,...
+%     'Fields', 'isPuff hpeaks php cdiff pfallR2 pvp pallAcdiff npeaks tnpeaks lifetime_s percentC MotionAnalysis',...
+%     'SecondFile', '/Volumes/Coatamer/Users/weinberz/CMU Drive/Data/Puffs Analysis/Classifier/globalTrain.npy', 'Overwrite', true);
 
-[res.raw, res.nmean, res.nmed, res.n] = extractComplexData(data);
+%[res.raw, res.nmean, res.nmed, res.n] = extractComplexData(data);
+res = [];
